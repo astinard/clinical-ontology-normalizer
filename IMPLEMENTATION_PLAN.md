@@ -10,11 +10,11 @@ Each task should be completed in one iteration with tests passing before checkin
 
 ## Phase 1: Repo Scaffolding & CI Gates
 
-- [ ] 1.1 Create backend Python package structure with pyproject.toml
-- [ ] 1.2 Set up backend linting (ruff) and formatting (black)
-- [ ] 1.3 Create pytest infrastructure with initial placeholder test
-- [ ] 1.4 Create Makefile with test, lint, typecheck targets
-- [ ] 1.5 Create AGENTS.md with workflow documentation
+- [x] 1.1 Create backend Python package structure with pyproject.toml
+- [x] 1.2 Set up backend linting (ruff) and formatting (black)
+- [x] 1.3 Create pytest infrastructure with initial placeholder test
+- [x] 1.4 Create Makefile with test, lint, typecheck targets
+- [x] 1.5 Create AGENTS.md with workflow documentation
 - [ ] 1.6 Create 10 synthetic clinical note fixtures with expected outputs
 
 ## Phase 2: Data Models & Database

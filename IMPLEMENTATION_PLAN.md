@@ -20,7 +20,7 @@ Each task should be completed in one iteration with tests passing before checkin
 ## Phase 2: Data Models & Database
 
 - [x] 2.1 Define Pydantic models for core entities (Document, Mention, ClinicalFact, etc.)
-- [ ] 2.2 Set up SQLAlchemy with async support and base model
+- [x] 2.2 Set up SQLAlchemy with async support and base model
 - [ ] 2.3 Create Document and StructuredResource tables with migrations
 - [ ] 2.4 Create Mention and MentionConceptCandidate tables with migrations
 - [ ] 2.5 Create ClinicalFact and FactEvidence tables with migrations

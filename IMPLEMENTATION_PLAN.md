@@ -15,7 +15,7 @@ Each task should be completed in one iteration with tests passing before checkin
 - [x] 1.3 Create pytest infrastructure with initial placeholder test
 - [x] 1.4 Create Makefile with test, lint, typecheck targets
 - [x] 1.5 Create AGENTS.md with workflow documentation
-- [ ] 1.6 Create 10 synthetic clinical note fixtures with expected outputs
+- [x] 1.6 Create 10 synthetic clinical note fixtures with expected outputs
 
 ## Phase 2: Data Models & Database
 

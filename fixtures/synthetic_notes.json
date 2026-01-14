@@ -1,0 +1,323 @@
+{
+  "notes": [
+    {
+      "id": "note_001",
+      "patient_id": "P001",
+      "note_type": "progress_note",
+      "text": "Patient is a 65-year-old male presenting with cough and fever. Chest X-ray performed. No evidence of pneumonia. Will monitor symptoms.",
+      "expected_mentions": [
+        {
+          "text": "cough",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        },
+        {
+          "text": "fever",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        },
+        {
+          "text": "pneumonia",
+          "assertion": "absent",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Negated by 'No evidence of'"
+        }
+      ]
+    },
+    {
+      "id": "note_002",
+      "patient_id": "P002",
+      "note_type": "progress_note",
+      "text": "History of congestive heart failure. Patient currently stable on current medications. No acute distress.",
+      "expected_mentions": [
+        {
+          "text": "congestive heart failure",
+          "assertion": "present",
+          "temporality": "past",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Historical condition indicated by 'History of'"
+        },
+        {
+          "text": "acute distress",
+          "assertion": "absent",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        }
+      ]
+    },
+    {
+      "id": "note_003",
+      "patient_id": "P003",
+      "note_type": "progress_note",
+      "text": "Family history significant for colon cancer - mother diagnosed at age 55. Patient denies any GI symptoms. Colonoscopy recommended.",
+      "expected_mentions": [
+        {
+          "text": "colon cancer",
+          "assertion": "present",
+          "temporality": "past",
+          "experiencer": "family",
+          "expected_domain": "condition",
+          "note": "Family member condition"
+        },
+        {
+          "text": "GI symptoms",
+          "assertion": "absent",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Negated by 'denies'"
+        }
+      ]
+    },
+    {
+      "id": "note_004",
+      "patient_id": "P004",
+      "note_type": "progress_note",
+      "text": "Patient with Type 2 diabetes mellitus. Current medications include Metformin 1000mg twice daily and Lisinopril 10mg daily for hypertension.",
+      "expected_mentions": [
+        {
+          "text": "Type 2 diabetes mellitus",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        },
+        {
+          "text": "hypertension",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        },
+        {
+          "text": "Metformin 1000mg",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "drug"
+        },
+        {
+          "text": "Lisinopril 10mg",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "drug"
+        }
+      ]
+    },
+    {
+      "id": "note_005",
+      "patient_id": "P005",
+      "note_type": "lab_report",
+      "text": "Lab Results: Hemoglobin A1c 7.2% (elevated), Fasting glucose 145 mg/dL (high), Creatinine 1.1 mg/dL (normal).",
+      "expected_mentions": [
+        {
+          "text": "Hemoglobin A1c",
+          "value": "7.2%",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "measurement"
+        },
+        {
+          "text": "Fasting glucose",
+          "value": "145 mg/dL",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "measurement"
+        },
+        {
+          "text": "Creatinine",
+          "value": "1.1 mg/dL",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "note_006",
+      "patient_id": "P006",
+      "note_type": "progress_note",
+      "text": "Possible urinary tract infection. Patient reports dysuria and frequency. Urine culture pending. Started on empiric antibiotics.",
+      "expected_mentions": [
+        {
+          "text": "urinary tract infection",
+          "assertion": "possible",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Uncertain - indicated by 'Possible'"
+        },
+        {
+          "text": "dysuria",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        },
+        {
+          "text": "frequency",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        }
+      ]
+    },
+    {
+      "id": "note_007",
+      "patient_id": "P007",
+      "note_type": "discharge_summary",
+      "text": "Patient admitted for chest pain. Cardiac enzymes negative. EKG normal. Chest pain ruled out for acute coronary syndrome. Discharge diagnosis: non-cardiac chest pain, likely musculoskeletal.",
+      "expected_mentions": [
+        {
+          "text": "chest pain",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        },
+        {
+          "text": "acute coronary syndrome",
+          "assertion": "absent",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Ruled out"
+        }
+      ]
+    },
+    {
+      "id": "note_008",
+      "patient_id": "P008",
+      "note_type": "progress_note",
+      "text": "Previous myocardial infarction in 2019. Currently on Aspirin 81mg daily and Atorvastatin 40mg daily. Denies chest pain or shortness of breath.",
+      "expected_mentions": [
+        {
+          "text": "myocardial infarction",
+          "assertion": "present",
+          "temporality": "past",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Historical - 'Previous'"
+        },
+        {
+          "text": "Aspirin 81mg",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "drug"
+        },
+        {
+          "text": "Atorvastatin 40mg",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "drug"
+        },
+        {
+          "text": "chest pain",
+          "assertion": "absent",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Negated by 'Denies'"
+        },
+        {
+          "text": "shortness of breath",
+          "assertion": "absent",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Negated by 'Denies'"
+        }
+      ]
+    },
+    {
+      "id": "note_009",
+      "patient_id": "P009",
+      "note_type": "progress_note",
+      "text": "Father had stroke at age 60. Patient is concerned about stroke risk. Blood pressure today 142/88. Will start antihypertensive therapy. Scheduled for carotid ultrasound.",
+      "expected_mentions": [
+        {
+          "text": "stroke",
+          "assertion": "present",
+          "temporality": "past",
+          "experiencer": "family",
+          "expected_domain": "condition",
+          "note": "Father's condition"
+        },
+        {
+          "text": "Blood pressure",
+          "value": "142/88",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "note_010",
+      "patient_id": "P010",
+      "note_type": "progress_note",
+      "text": "Cannot rule out pulmonary embolism. Patient with sudden onset dyspnea and pleuritic chest pain. D-dimer elevated. CT angiography ordered. Started on anticoagulation.",
+      "expected_mentions": [
+        {
+          "text": "pulmonary embolism",
+          "assertion": "possible",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition",
+          "note": "Uncertain - 'Cannot rule out'"
+        },
+        {
+          "text": "dyspnea",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        },
+        {
+          "text": "pleuritic chest pain",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "condition"
+        },
+        {
+          "text": "D-dimer",
+          "assertion": "present",
+          "temporality": "current",
+          "experiencer": "patient",
+          "expected_domain": "measurement",
+          "note": "Elevated value"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "description": "Synthetic clinical notes for testing NLP pipeline",
+    "note_count": 10,
+    "coverage": {
+      "negation_examples": ["note_001", "note_002", "note_003", "note_007", "note_008"],
+      "temporality_past": ["note_002", "note_008", "note_009"],
+      "experiencer_family": ["note_003", "note_009"],
+      "uncertainty_examples": ["note_006", "note_010"],
+      "medication_examples": ["note_004", "note_008"],
+      "lab_examples": ["note_005", "note_009", "note_010"]
+    }
+  }
+}

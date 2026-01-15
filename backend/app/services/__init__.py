@@ -5,7 +5,7 @@ Services implement business logic and data processing:
 - NLPService: Mention extraction (task 4.x)
 - MappingService: OMOP concept mapping (task 5.x)
 - FactBuilderService: ClinicalFact construction (task 6.x)
-- GraphBuilderService: Knowledge graph materialization (task 7.x) - pending
+- GraphBuilderService: Knowledge graph materialization (task 7.x)
 """
 
 from app.services.fact_builder import (
@@ -16,6 +16,14 @@ from app.services.fact_builder import (
     FactResult,
 )
 from app.services.fact_builder_db import DatabaseFactBuilderService
+from app.services.graph_builder import (
+    BaseGraphBuilderService,
+    EdgeInput,
+    GraphBuilderServiceInterface,
+    GraphResult,
+    NodeInput,
+)
+from app.services.graph_builder_db import DatabaseGraphBuilderService
 from app.services.mapping import (
     BaseMappingService,
     ConceptCandidate,
@@ -29,18 +37,24 @@ from app.services.vocabulary import VocabularyService
 
 __all__ = [
     "BaseFactBuilderService",
+    "BaseGraphBuilderService",
     "BaseMappingService",
     "BaseNLPService",
     "ConceptCandidate",
     "DatabaseFactBuilderService",
+    "DatabaseGraphBuilderService",
     "DatabaseMappingService",
+    "EdgeInput",
     "EvidenceInput",
     "ExtractedMention",
     "FactBuilderServiceInterface",
     "FactInput",
     "FactResult",
+    "GraphBuilderServiceInterface",
+    "GraphResult",
     "MappingMethod",
     "MappingServiceInterface",
+    "NodeInput",
     "NLPServiceInterface",
     "RuleBasedNLPService",
     "VocabularyService",

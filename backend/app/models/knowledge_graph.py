@@ -1,7 +1,7 @@
 """SQLAlchemy models for KGNode and KGEdge."""
 
-from sqlalchemy import Enum, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, Enum, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -43,7 +43,7 @@ class KGNode(Base):
         nullable=False,
     )
     properties: Mapped[dict] = mapped_column(
-        JSONB,
+        JSON,
         nullable=False,
         default=dict,
     )
@@ -113,7 +113,7 @@ class KGEdge(Base):
         nullable=True,
     )
     properties: Mapped[dict] = mapped_column(
-        JSONB,
+        JSON,
         nullable=False,
         default=dict,
     )

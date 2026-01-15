@@ -102,10 +102,10 @@ class TestKGNodeModel:
         concept_id_col = KGNode.__table__.c.omop_concept_id
         assert concept_id_col.nullable is True
 
-    def test_kg_node_properties_is_jsonb(self) -> None:
-        """Test properties column uses JSONB type."""
+    def test_kg_node_properties_is_json(self) -> None:
+        """Test properties column uses JSON type."""
         properties_col = KGNode.__table__.c.properties
-        assert "JSONB" in str(properties_col.type).upper()
+        assert "JSON" in str(properties_col.type).upper()
 
     def test_kg_node_repr(self) -> None:
         """Test KGNode __repr__ method."""

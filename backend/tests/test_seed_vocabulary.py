@@ -54,7 +54,9 @@ class TestVocabularyFixture:
         ]
         for concept in vocabulary_data["concepts"]:
             for field in required_fields:
-                assert field in concept, f"Missing field '{field}' in concept: {concept.get('concept_name', 'unknown')}"
+                assert field in concept, (
+                    f"Missing field '{field}' in concept: {concept.get('concept_name', 'unknown')}"
+                )
 
     def test_concepts_have_unique_ids(self, vocabulary_data: dict) -> None:
         """Test that concept_ids are unique."""
@@ -65,13 +67,17 @@ class TestVocabularyFixture:
         """Test that fixture covers multiple clinical domains."""
         domains = {c["domain_id"] for c in vocabulary_data["concepts"]}
         expected_domains = {"Condition", "Drug", "Measurement", "Procedure"}
-        assert expected_domains.issubset(domains), f"Missing domains. Expected: {expected_domains}, Found: {domains}"
+        assert expected_domains.issubset(domains), (
+            f"Missing domains. Expected: {expected_domains}, Found: {domains}"
+        )
 
     def test_concepts_cover_multiple_vocabularies(self, vocabulary_data: dict) -> None:
         """Test that fixture covers multiple vocabularies."""
         vocabularies = {c["vocabulary_id"] for c in vocabulary_data["concepts"]}
         expected_vocabs = {"SNOMED", "RxNorm", "LOINC"}
-        assert expected_vocabs.issubset(vocabularies), f"Missing vocabularies. Expected: {expected_vocabs}, Found: {vocabularies}"
+        assert expected_vocabs.issubset(vocabularies), (
+            f"Missing vocabularies. Expected: {expected_vocabs}, Found: {vocabularies}"
+        )
 
     def test_concepts_have_synonyms(self, vocabulary_data: dict) -> None:
         """Test that concepts have synonyms for fuzzy matching."""
@@ -80,7 +86,9 @@ class TestVocabularyFixture:
 
         # Check that most concepts have at least one synonym
         total_concepts = len(vocabulary_data["concepts"])
-        assert len(concepts_with_synonyms) > total_concepts * 0.5, "Less than 50% of concepts have synonyms"
+        assert len(concepts_with_synonyms) > total_concepts * 0.5, (
+            "Less than 50% of concepts have synonyms"
+        )
 
 
 class TestSyntheticNoteCoverage:
@@ -190,6 +198,7 @@ class TestSeedScriptModule:
         import asyncio
 
         from app.scripts.seed_vocabulary import seed_vocabulary
+
         assert asyncio.iscoroutinefunction(seed_vocabulary)
 
     def test_seed_vocabulary_has_load_fixture_function(self) -> None:
@@ -197,6 +206,7 @@ class TestSeedScriptModule:
         import asyncio
 
         from app.scripts.seed_vocabulary import load_vocabulary_fixture
+
         assert asyncio.iscoroutinefunction(load_vocabulary_fixture)
 
     def test_vocabulary_file_path_is_correct(self) -> None:

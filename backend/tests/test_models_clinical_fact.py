@@ -22,9 +22,20 @@ class TestClinicalFactModel:
         """Test ClinicalFact has all required columns."""
         columns = ClinicalFact.__table__.c
         required_columns = [
-            "id", "created_at", "patient_id", "domain", "omop_concept_id",
-            "concept_name", "assertion", "temporality", "experiencer",
-            "confidence", "value", "unit", "start_date", "end_date"
+            "id",
+            "created_at",
+            "patient_id",
+            "domain",
+            "omop_concept_id",
+            "concept_name",
+            "assertion",
+            "temporality",
+            "experiencer",
+            "confidence",
+            "value",
+            "unit",
+            "start_date",
+            "end_date",
         ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"
@@ -174,8 +185,14 @@ class TestFactEvidenceModel:
         """Test FactEvidence has all required columns."""
         columns = FactEvidence.__table__.c
         required_columns = [
-            "id", "created_at", "fact_id", "evidence_type",
-            "source_id", "source_table", "weight", "notes"
+            "id",
+            "created_at",
+            "fact_id",
+            "evidence_type",
+            "source_id",
+            "source_table",
+            "weight",
+            "notes",
         ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"

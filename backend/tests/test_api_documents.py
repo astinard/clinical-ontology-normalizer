@@ -34,9 +34,7 @@ class TestDocumentUpload:
     ) -> None:
         """Test document upload returns 201 Created."""
         # Mock the document ID that would be assigned by the database
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         response = await client_with_mock_db.post(
             "/documents",
@@ -52,9 +50,7 @@ class TestDocumentUpload:
         valid_document_payload: dict,
     ) -> None:
         """Test upload response contains document_id."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         response = await client_with_mock_db.post(
             "/documents",
@@ -73,9 +69,7 @@ class TestDocumentUpload:
         valid_document_payload: dict,
     ) -> None:
         """Test upload response contains job_id."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         response = await client_with_mock_db.post(
             "/documents",
@@ -94,9 +88,7 @@ class TestDocumentUpload:
         valid_document_payload: dict,
     ) -> None:
         """Test upload response has QUEUED status."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         response = await client_with_mock_db.post(
             "/documents",
@@ -113,9 +105,7 @@ class TestDocumentUpload:
         valid_document_payload: dict,
     ) -> None:
         """Test that document is added to database session."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         await client_with_mock_db.post(
             "/documents",
@@ -131,9 +121,7 @@ class TestDocumentUpload:
         valid_document_payload: dict,
     ) -> None:
         """Test that database flush is called to get document ID."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         await client_with_mock_db.post(
             "/documents",
@@ -187,9 +175,7 @@ class TestDocumentUpload:
         mock_db_session: MagicMock,
     ) -> None:
         """Test upload with empty text is allowed (edge case)."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         payload = {
             "patient_id": "patient-123",
@@ -207,9 +193,7 @@ class TestDocumentUpload:
         mock_db_session: MagicMock,
     ) -> None:
         """Test upload without metadata uses empty dict default."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         payload = {
             "patient_id": "patient-123",
@@ -230,9 +214,7 @@ class TestDocumentUploadWithSyntheticNotes:
         mock_db_session: MagicMock,
     ) -> None:
         """Test uploading a pneumonia clinical note."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         payload = {
             "patient_id": "patient-001",
@@ -264,9 +246,7 @@ class TestDocumentUploadWithSyntheticNotes:
         mock_db_session: MagicMock,
     ) -> None:
         """Test uploading a discharge summary note."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         payload = {
             "patient_id": "patient-002",
@@ -314,9 +294,7 @@ class TestDocumentUploadJobEnqueue:
         valid_document_payload: dict,
     ) -> None:
         """Test that document upload enqueues a processing job."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         async def override_get_db():
             yield mock_db_session
@@ -341,9 +319,7 @@ class TestDocumentUploadJobEnqueue:
         valid_document_payload: dict,
     ) -> None:
         """Test that job is enqueued to the document processing queue."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         async def override_get_db():
             yield mock_db_session
@@ -370,9 +346,7 @@ class TestDocumentUploadJobEnqueue:
         valid_document_payload: dict,
     ) -> None:
         """Test that job_id in response matches the enqueued job."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         async def override_get_db():
             yield mock_db_session
@@ -399,9 +373,7 @@ class TestDocumentUploadJobEnqueue:
         valid_document_payload: dict,
     ) -> None:
         """Test that upload succeeds even when Redis is unavailable."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         async def override_get_db():
             yield mock_db_session
@@ -432,9 +404,7 @@ class TestDocumentUploadJobEnqueue:
         valid_document_payload: dict,
     ) -> None:
         """Test that upload succeeds even when RQ is not installed."""
-        mock_db_session.add = MagicMock(
-            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
-        )
+        mock_db_session.add = MagicMock(side_effect=lambda doc: setattr(doc, "id", str(uuid4())))
 
         async def override_get_db():
             yield mock_db_session
@@ -590,6 +560,7 @@ class TestDocumentRetrieval:
         mock_enqueue_job: MagicMock,
     ) -> None:
         """Test that GET /documents/{doc_id} returns 422 for invalid UUID."""
+
         async def override_get_db():
             yield mock_db_session
 

@@ -308,9 +308,7 @@ class TestMentionConceptCandidateCreation:
         # Check MentionConceptCandidate objects were added
         add_calls = mock_session.add.call_args_list
         candidates_added = [
-            call[0][0]
-            for call in add_calls
-            if isinstance(call[0][0], MentionConceptCandidate)
+            call[0][0] for call in add_calls if isinstance(call[0][0], MentionConceptCandidate)
         ]
         assert len(candidates_added) >= 1
 
@@ -369,9 +367,7 @@ class TestMentionConceptCandidateCreation:
 
         add_calls = mock_session.add.call_args_list
         candidates = [
-            call[0][0]
-            for call in add_calls
-            if isinstance(call[0][0], MentionConceptCandidate)
+            call[0][0] for call in add_calls if isinstance(call[0][0], MentionConceptCandidate)
         ]
 
         assert len(candidates) >= 1
@@ -453,8 +449,6 @@ class TestMentionConceptCandidateCreation:
 
         add_calls = mock_session.add.call_args_list
         candidates = [
-            call[0][0]
-            for call in add_calls
-            if isinstance(call[0][0], MentionConceptCandidate)
+            call[0][0] for call in add_calls if isinstance(call[0][0], MentionConceptCandidate)
         ]
         assert len(candidates) >= 2

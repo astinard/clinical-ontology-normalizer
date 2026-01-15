@@ -20,8 +20,14 @@ class TestConceptModel:
         """Test Concept has all required columns."""
         columns = Concept.__table__.c
         required_columns = [
-            "id", "created_at", "concept_id", "concept_name",
-            "domain_id", "vocabulary_id", "concept_class_id", "standard_concept"
+            "id",
+            "created_at",
+            "concept_id",
+            "concept_name",
+            "domain_id",
+            "vocabulary_id",
+            "concept_class_id",
+            "standard_concept",
         ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"
@@ -167,8 +173,11 @@ class TestConceptSynonymModel:
         """Test ConceptSynonym has all required columns."""
         columns = ConceptSynonym.__table__.c
         required_columns = [
-            "id", "created_at", "concept_id",
-            "concept_synonym_name", "language_concept_id"
+            "id",
+            "created_at",
+            "concept_id",
+            "concept_synonym_name",
+            "language_concept_id",
         ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"

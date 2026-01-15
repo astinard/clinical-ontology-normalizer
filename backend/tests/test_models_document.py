@@ -23,7 +23,16 @@ class TestDocumentModel:
         """Test Document has all required columns."""
         columns = Document.__table__.c
         # Note: 'metadata' is the DB column name, mapped to 'extra_metadata' in Python
-        required_columns = ["id", "created_at", "patient_id", "note_type", "text", "metadata", "status", "processed_at"]
+        required_columns = [
+            "id",
+            "created_at",
+            "patient_id",
+            "note_type",
+            "text",
+            "metadata",
+            "status",
+            "processed_at",
+        ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"
 
@@ -124,7 +133,16 @@ class TestStructuredResourceModel:
         """Test StructuredResource has all required columns."""
         columns = StructuredResource.__table__.c
         # Note: 'metadata' is the DB column name, mapped to 'extra_metadata' in Python
-        required_columns = ["id", "created_at", "patient_id", "resource_type", "payload", "metadata", "status", "processed_at"]
+        required_columns = [
+            "id",
+            "created_at",
+            "patient_id",
+            "resource_type",
+            "payload",
+            "metadata",
+            "status",
+            "processed_at",
+        ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"
 

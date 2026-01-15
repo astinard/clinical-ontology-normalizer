@@ -13,7 +13,9 @@ class DocumentCreate(BaseModel):
     """Schema for creating a new document."""
 
     patient_id: str = Field(..., description="Patient identifier")
-    note_type: str = Field(..., description="Type of clinical note (progress_note, discharge_summary, etc.)")
+    note_type: str = Field(
+        ..., description="Type of clinical note (progress_note, discharge_summary, etc.)"
+    )
     text: str = Field(..., description="Raw clinical note text")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 

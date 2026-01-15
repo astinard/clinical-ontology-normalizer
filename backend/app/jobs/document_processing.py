@@ -142,8 +142,7 @@ def process_document(document_id: str) -> dict:
                     candidate_count += 1
 
             logger.info(
-                f"Created {candidate_count} concept candidates for "
-                f"{len(mention_records)} mentions"
+                f"Created {candidate_count} concept candidates for {len(mention_records)} mentions"
             )
 
             # TODO: Phase 6 - Create ClinicalFacts

@@ -23,7 +23,9 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # Create assertion_type enum
     assertion_enum = postgresql.ENUM(
-        "present", "absent", "possible",
+        "present",
+        "absent",
+        "possible",
         name="assertion_type",
         create_type=False,
     )
@@ -31,7 +33,9 @@ def upgrade() -> None:
 
     # Create temporality_type enum
     temporality_enum = postgresql.ENUM(
-        "current", "past", "future",
+        "current",
+        "past",
+        "future",
         name="temporality_type",
         create_type=False,
     )
@@ -39,7 +43,9 @@ def upgrade() -> None:
 
     # Create experiencer_type enum
     experiencer_enum = postgresql.ENUM(
-        "patient", "family", "other",
+        "patient",
+        "family",
+        "other",
         name="experiencer_type",
         create_type=False,
     )
@@ -47,7 +53,13 @@ def upgrade() -> None:
 
     # Create domain_type enum
     domain_enum = postgresql.ENUM(
-        "condition", "drug", "measurement", "procedure", "observation", "device", "visit",
+        "condition",
+        "drug",
+        "measurement",
+        "procedure",
+        "observation",
+        "device",
+        "visit",
         name="domain_type",
         create_type=False,
     )
@@ -57,8 +69,15 @@ def upgrade() -> None:
     op.create_table(
         "mentions",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("document_id", postgresql.UUID(as_uuid=False), sa.ForeignKey("documents.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "document_id",
+            postgresql.UUID(as_uuid=False),
+            sa.ForeignKey("documents.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("text", sa.Text(), nullable=False),
         sa.Column("start_offset", sa.Integer(), nullable=False),
         sa.Column("end_offset", sa.Integer(), nullable=False),
@@ -76,8 +95,15 @@ def upgrade() -> None:
     op.create_table(
         "mention_concept_candidates",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("mention_id", postgresql.UUID(as_uuid=False), sa.ForeignKey("mentions.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "mention_id",
+            postgresql.UUID(as_uuid=False),
+            sa.ForeignKey("mentions.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("omop_concept_id", sa.Integer(), nullable=False),
         sa.Column("concept_name", sa.String(500), nullable=False),
         sa.Column("concept_code", sa.String(100), nullable=False),
@@ -87,8 +113,14 @@ def upgrade() -> None:
         sa.Column("method", sa.String(50), nullable=False),
         sa.Column("rank", sa.Integer(), nullable=False),
     )
-    op.create_index("ix_mention_concept_candidates_mention_id", "mention_concept_candidates", ["mention_id"])
-    op.create_index("ix_mention_concept_candidates_omop_concept_id", "mention_concept_candidates", ["omop_concept_id"])
+    op.create_index(
+        "ix_mention_concept_candidates_mention_id", "mention_concept_candidates", ["mention_id"]
+    )
+    op.create_index(
+        "ix_mention_concept_candidates_omop_concept_id",
+        "mention_concept_candidates",
+        ["omop_concept_id"],
+    )
 
 
 def downgrade() -> None:

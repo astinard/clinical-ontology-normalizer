@@ -24,9 +24,7 @@ _queues: dict[str, "Queue"] = {}
 def _check_rq_available() -> None:
     """Raise error if RQ is not available."""
     if not RQ_AVAILABLE:
-        raise ImportError(
-            "RQ package is not installed. Install with: pip install rq"
-        )
+        raise ImportError("RQ package is not installed. Install with: pip install rq")
 
 
 def get_queue(name: str = "default") -> "Queue":

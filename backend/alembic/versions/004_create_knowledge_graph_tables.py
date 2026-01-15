@@ -23,7 +23,12 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # Create node_type enum
     node_type_enum = postgresql.ENUM(
-        "patient", "condition", "drug", "measurement", "procedure", "observation",
+        "patient",
+        "condition",
+        "drug",
+        "measurement",
+        "procedure",
+        "observation",
         name="node_type",
         create_type=False,
     )
@@ -31,8 +36,13 @@ def upgrade() -> None:
 
     # Create edge_type enum
     edge_type_enum = postgresql.ENUM(
-        "has_condition", "takes_drug", "has_measurement", "has_procedure",
-        "has_observation", "condition_treated_by", "drug_treats",
+        "has_condition",
+        "takes_drug",
+        "has_measurement",
+        "has_procedure",
+        "has_observation",
+        "condition_treated_by",
+        "drug_treats",
         name="edge_type",
         create_type=False,
     )
@@ -42,7 +52,9 @@ def upgrade() -> None:
     op.create_table(
         "kg_nodes",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("patient_id", sa.String(255), nullable=False),
         sa.Column("node_type", node_type_enum, nullable=False),
         sa.Column("omop_concept_id", sa.Integer(), nullable=True),
@@ -57,12 +69,29 @@ def upgrade() -> None:
     op.create_table(
         "kg_edges",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("patient_id", sa.String(255), nullable=False),
-        sa.Column("source_node_id", postgresql.UUID(as_uuid=False), sa.ForeignKey("kg_nodes.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("target_node_id", postgresql.UUID(as_uuid=False), sa.ForeignKey("kg_nodes.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "source_node_id",
+            postgresql.UUID(as_uuid=False),
+            sa.ForeignKey("kg_nodes.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column(
+            "target_node_id",
+            postgresql.UUID(as_uuid=False),
+            sa.ForeignKey("kg_nodes.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("edge_type", edge_type_enum, nullable=False),
-        sa.Column("fact_id", postgresql.UUID(as_uuid=False), sa.ForeignKey("clinical_facts.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "fact_id",
+            postgresql.UUID(as_uuid=False),
+            sa.ForeignKey("clinical_facts.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
         sa.Column("properties", postgresql.JSONB(), nullable=False, server_default="{}"),
     )
     op.create_index("ix_kg_edges_patient_id", "kg_edges", ["patient_id"])

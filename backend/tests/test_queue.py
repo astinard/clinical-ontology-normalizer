@@ -162,9 +162,7 @@ class TestEnqueueJob:
     """Test enqueue_job function."""
 
     @patch("app.core.queue.get_queue")
-    def test_enqueue_job_calls_queue_enqueue(
-        self, mock_get_queue: MagicMock
-    ) -> None:
+    def test_enqueue_job_calls_queue_enqueue(self, mock_get_queue: MagicMock) -> None:
         """Test that enqueue_job calls queue.enqueue."""
         from app.core.queue import enqueue_job
 
@@ -179,9 +177,7 @@ class TestEnqueueJob:
         mock_queue.enqueue.assert_called_once()
 
     @patch("app.core.queue.get_queue")
-    def test_enqueue_job_uses_default_queue(
-        self, mock_get_queue: MagicMock
-    ) -> None:
+    def test_enqueue_job_uses_default_queue(self, mock_get_queue: MagicMock) -> None:
         """Test that enqueue_job uses default queue."""
         from app.core.queue import enqueue_job
 
@@ -193,9 +189,7 @@ class TestEnqueueJob:
         mock_get_queue.assert_called_with("default")
 
     @patch("app.core.queue.get_queue")
-    def test_enqueue_job_uses_custom_queue(
-        self, mock_get_queue: MagicMock
-    ) -> None:
+    def test_enqueue_job_uses_custom_queue(self, mock_get_queue: MagicMock) -> None:
         """Test that enqueue_job can use custom queue."""
         from app.core.queue import enqueue_job
 
@@ -207,9 +201,7 @@ class TestEnqueueJob:
         mock_get_queue.assert_called_with("my_queue")
 
     @patch("app.core.queue.get_queue")
-    def test_enqueue_job_passes_timeout(
-        self, mock_get_queue: MagicMock
-    ) -> None:
+    def test_enqueue_job_passes_timeout(self, mock_get_queue: MagicMock) -> None:
         """Test that enqueue_job passes job_timeout."""
         from app.core.queue import enqueue_job
 
@@ -222,9 +214,7 @@ class TestEnqueueJob:
         assert call_kwargs["job_timeout"] == 300
 
     @patch("app.core.queue.get_queue")
-    def test_enqueue_job_passes_job_id(
-        self, mock_get_queue: MagicMock
-    ) -> None:
+    def test_enqueue_job_passes_job_id(self, mock_get_queue: MagicMock) -> None:
         """Test that enqueue_job can pass custom job_id."""
         from uuid import uuid4
 
@@ -245,9 +235,7 @@ class TestGetJob:
 
     @patch("app.core.queue.get_redis")
     @patch("app.core.queue.Job.fetch")
-    def test_get_job_fetches_by_id(
-        self, mock_fetch: MagicMock, mock_redis: MagicMock
-    ) -> None:
+    def test_get_job_fetches_by_id(self, mock_fetch: MagicMock, mock_redis: MagicMock) -> None:
         """Test that get_job fetches job by ID."""
         from app.core.queue import get_job
 
@@ -278,9 +266,7 @@ class TestGetJob:
 
     @patch("app.core.queue.get_redis")
     @patch("app.core.queue.Job.fetch")
-    def test_get_job_handles_uuid_id(
-        self, mock_fetch: MagicMock, mock_redis: MagicMock
-    ) -> None:
+    def test_get_job_handles_uuid_id(self, mock_fetch: MagicMock, mock_redis: MagicMock) -> None:
         """Test that get_job handles UUID job IDs."""
         from uuid import uuid4
 
@@ -302,9 +288,7 @@ class TestGetJobStatus:
     """Test get_job_status function."""
 
     @patch("app.core.queue.get_job")
-    def test_get_job_status_returns_status(
-        self, mock_get_job: MagicMock
-    ) -> None:
+    def test_get_job_status_returns_status(self, mock_get_job: MagicMock) -> None:
         """Test that get_job_status returns job status."""
         from app.core.queue import get_job_status
 
@@ -317,9 +301,7 @@ class TestGetJobStatus:
         assert result == "finished"
 
     @patch("app.core.queue.get_job")
-    def test_get_job_status_returns_none_when_not_found(
-        self, mock_get_job: MagicMock
-    ) -> None:
+    def test_get_job_status_returns_none_when_not_found(self, mock_get_job: MagicMock) -> None:
         """Test that get_job_status returns None when job not found."""
         from app.core.queue import get_job_status
 
@@ -334,9 +316,7 @@ class TestGetJobResult:
     """Test get_job_result function."""
 
     @patch("app.core.queue.get_job")
-    def test_get_job_result_returns_result(
-        self, mock_get_job: MagicMock
-    ) -> None:
+    def test_get_job_result_returns_result(self, mock_get_job: MagicMock) -> None:
         """Test that get_job_result returns job result."""
         from app.core.queue import get_job_result
 
@@ -349,9 +329,7 @@ class TestGetJobResult:
         assert result == {"processed": True}
 
     @patch("app.core.queue.get_job")
-    def test_get_job_result_returns_none_when_not_found(
-        self, mock_get_job: MagicMock
-    ) -> None:
+    def test_get_job_result_returns_none_when_not_found(self, mock_get_job: MagicMock) -> None:
         """Test that get_job_result returns None when job not found."""
         from app.core.queue import get_job_result
 

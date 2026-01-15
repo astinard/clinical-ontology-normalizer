@@ -57,7 +57,7 @@ Each task should be completed in one iteration with tests passing before checkin
 
 ## Phase 6: ClinicalFact Construction
 
-- [ ] 6.1 Create fact builder service interface
+- [x] 6.1 Create fact builder service interface
 - [ ] 6.2 Implement unstructured-to-fact conversion (from Mentions)
 - [ ] 6.3 Implement structured-to-fact conversion (from FHIR/CSV)
 - [ ] 6.4 Create FactEvidence links with provenance

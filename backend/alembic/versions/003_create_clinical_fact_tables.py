@@ -23,7 +23,9 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # Create evidence_type enum
     evidence_type_enum = postgresql.ENUM(
-        "mention", "structured", "inferred",
+        "mention",
+        "structured",
+        "inferred",
         name="evidence_type",
         create_type=False,
     )
@@ -33,14 +35,45 @@ def upgrade() -> None:
     op.create_table(
         "clinical_facts",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("patient_id", sa.String(255), nullable=False),
-        sa.Column("domain", sa.Enum("condition", "drug", "measurement", "procedure", "observation", "device", "visit", name="domain_type", create_type=False), nullable=False),
+        sa.Column(
+            "domain",
+            sa.Enum(
+                "condition",
+                "drug",
+                "measurement",
+                "procedure",
+                "observation",
+                "device",
+                "visit",
+                name="domain_type",
+                create_type=False,
+            ),
+            nullable=False,
+        ),
         sa.Column("omop_concept_id", sa.Integer(), nullable=False),
         sa.Column("concept_name", sa.String(500), nullable=False),
-        sa.Column("assertion", sa.Enum("present", "absent", "possible", name="assertion_type", create_type=False), nullable=False, server_default="present"),
-        sa.Column("temporality", sa.Enum("current", "past", "future", name="temporality_type", create_type=False), nullable=False, server_default="current"),
-        sa.Column("experiencer", sa.Enum("patient", "family", "other", name="experiencer_type", create_type=False), nullable=False, server_default="patient"),
+        sa.Column(
+            "assertion",
+            sa.Enum("present", "absent", "possible", name="assertion_type", create_type=False),
+            nullable=False,
+            server_default="present",
+        ),
+        sa.Column(
+            "temporality",
+            sa.Enum("current", "past", "future", name="temporality_type", create_type=False),
+            nullable=False,
+            server_default="current",
+        ),
+        sa.Column(
+            "experiencer",
+            sa.Enum("patient", "family", "other", name="experiencer_type", create_type=False),
+            nullable=False,
+            server_default="patient",
+        ),
         sa.Column("confidence", sa.Float(), nullable=False, server_default="1.0"),
         sa.Column("value", sa.String(255), nullable=True),
         sa.Column("unit", sa.String(50), nullable=True),
@@ -56,8 +89,15 @@ def upgrade() -> None:
     op.create_table(
         "fact_evidence",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("fact_id", postgresql.UUID(as_uuid=False), sa.ForeignKey("clinical_facts.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "fact_id",
+            postgresql.UUID(as_uuid=False),
+            sa.ForeignKey("clinical_facts.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("evidence_type", evidence_type_enum, nullable=False),
         sa.Column("source_id", postgresql.UUID(as_uuid=False), nullable=False),
         sa.Column("source_table", sa.String(100), nullable=False),

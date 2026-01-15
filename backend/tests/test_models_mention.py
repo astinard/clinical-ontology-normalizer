@@ -21,9 +21,18 @@ class TestMentionModel:
         """Test Mention has all required columns."""
         columns = Mention.__table__.c
         required_columns = [
-            "id", "created_at", "document_id", "text", "start_offset",
-            "end_offset", "lexical_variant", "section", "assertion",
-            "temporality", "experiencer", "confidence"
+            "id",
+            "created_at",
+            "document_id",
+            "text",
+            "start_offset",
+            "end_offset",
+            "lexical_variant",
+            "section",
+            "assertion",
+            "temporality",
+            "experiencer",
+            "confidence",
         ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"
@@ -139,9 +148,17 @@ class TestMentionConceptCandidateModel:
         """Test MentionConceptCandidate has all required columns."""
         columns = MentionConceptCandidate.__table__.c
         required_columns = [
-            "id", "created_at", "mention_id", "omop_concept_id",
-            "concept_name", "concept_code", "vocabulary_id",
-            "domain_id", "score", "method", "rank"
+            "id",
+            "created_at",
+            "mention_id",
+            "omop_concept_id",
+            "concept_name",
+            "concept_code",
+            "vocabulary_id",
+            "domain_id",
+            "score",
+            "method",
+            "rank",
         ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"

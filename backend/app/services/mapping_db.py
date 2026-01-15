@@ -61,9 +61,7 @@ class DatabaseMappingService(BaseMappingService):
                 syn_key = synonym.concept_synonym_name.lower().strip()
                 if syn_key not in self._synonym_index:
                     self._synonym_index[syn_key] = []
-                self._synonym_index[syn_key].append(
-                    (concept, synonym.concept_synonym_name)
-                )
+                self._synonym_index[syn_key].append((concept, synonym.concept_synonym_name))
 
         self._loaded = True
 
@@ -82,9 +80,7 @@ class DatabaseMappingService(BaseMappingService):
             if self._session is not None:
                 self.load_from_db(self._session)
             else:
-                raise RuntimeError(
-                    "Vocabulary not loaded. Call load_from_db(session) first."
-                )
+                raise RuntimeError("Vocabulary not loaded. Call load_from_db(session) first.")
 
     def _domain_from_string(self, domain_id: str) -> Domain:
         """Convert domain_id string to Domain enum."""
@@ -137,10 +133,7 @@ class DatabaseMappingService(BaseMappingService):
         ) -> bool:
             if concept.concept_id in seen_ids:
                 return False
-            if (
-                domain is not None
-                and self._domain_from_string(concept.domain_id) != domain
-            ):
+            if domain is not None and self._domain_from_string(concept.domain_id) != domain:
                 return False
 
             candidate = self._concept_to_candidate(
@@ -179,9 +172,10 @@ class DatabaseMappingService(BaseMappingService):
                 if similarity >= min_threshold:
                     for concept, _variant in entries:
                         if concept.concept_id not in seen_ids:
-                            if domain is None or self._domain_from_string(
-                                concept.domain_id
-                            ) == domain:
+                            if (
+                                domain is None
+                                or self._domain_from_string(concept.domain_id) == domain
+                            ):
                                 fuzzy_candidates.append((concept, similarity))
 
             # Sort by score descending and add top candidates

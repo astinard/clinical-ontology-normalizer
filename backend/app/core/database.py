@@ -37,6 +37,7 @@ def get_sync_engine() -> Engine:
         )
     return _sync_engine
 
+
 # Create async session factory
 async_session_maker = async_sessionmaker(
     engine,

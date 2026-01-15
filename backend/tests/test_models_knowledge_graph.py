@@ -21,8 +21,13 @@ class TestKGNodeModel:
         """Test KGNode has all required columns."""
         columns = KGNode.__table__.c
         required_columns = [
-            "id", "created_at", "patient_id", "node_type",
-            "omop_concept_id", "label", "properties"
+            "id",
+            "created_at",
+            "patient_id",
+            "node_type",
+            "omop_concept_id",
+            "label",
+            "properties",
         ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"
@@ -132,8 +137,14 @@ class TestKGEdgeModel:
         """Test KGEdge has all required columns."""
         columns = KGEdge.__table__.c
         required_columns = [
-            "id", "created_at", "patient_id", "source_node_id",
-            "target_node_id", "edge_type", "fact_id", "properties"
+            "id",
+            "created_at",
+            "patient_id",
+            "source_node_id",
+            "target_node_id",
+            "edge_type",
+            "fact_id",
+            "properties",
         ]
         for col in required_columns:
             assert col in columns, f"Missing column: {col}"

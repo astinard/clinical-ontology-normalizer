@@ -35,7 +35,9 @@ class KGNodeCreate(BaseModel):
 
     patient_id: str = Field(..., description="Patient this node belongs to")
     node_type: NodeType = Field(..., description="Type of node")
-    omop_concept_id: int | None = Field(None, description="OMOP concept ID (null for patient nodes)")
+    omop_concept_id: int | None = Field(
+        None, description="OMOP concept ID (null for patient nodes)"
+    )
     label: str = Field(..., description="Human-readable label")
     properties: dict = Field(default_factory=dict, description="Node-specific properties")
 

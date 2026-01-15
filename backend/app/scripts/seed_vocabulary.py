@@ -41,13 +41,9 @@ async def load_vocabulary_fixture() -> dict[str, Any]:
 async def clear_vocabulary(session: AsyncSession) -> None:
     """Clear existing vocabulary data."""
     # Delete synonyms first (foreign key constraint)
-    await session.execute(
-        ConceptSynonym.__table__.delete()
-    )
+    await session.execute(ConceptSynonym.__table__.delete())
     # Then delete concepts
-    await session.execute(
-        Concept.__table__.delete()
-    )
+    await session.execute(Concept.__table__.delete())
     await session.commit()
     logger.info("Cleared existing vocabulary data")
 

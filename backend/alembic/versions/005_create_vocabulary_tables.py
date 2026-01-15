@@ -25,7 +25,9 @@ def upgrade() -> None:
     op.create_table(
         "concepts",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("concept_id", sa.Integer(), nullable=False, unique=True),
         sa.Column("concept_name", sa.String(500), nullable=False),
         sa.Column("domain_id", sa.String(50), nullable=False),
@@ -42,7 +44,9 @@ def upgrade() -> None:
     op.create_table(
         "concept_synonyms",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column(
             "concept_id",
             sa.Integer(),
@@ -53,7 +57,9 @@ def upgrade() -> None:
         sa.Column("language_concept_id", sa.Integer(), nullable=False, server_default="4180186"),
     )
     op.create_index("ix_concept_synonyms_concept_id", "concept_synonyms", ["concept_id"])
-    op.create_index("ix_concept_synonyms_concept_synonym_name", "concept_synonyms", ["concept_synonym_name"])
+    op.create_index(
+        "ix_concept_synonyms_concept_synonym_name", "concept_synonyms", ["concept_synonym_name"]
+    )
 
 
 def downgrade() -> None:

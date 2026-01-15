@@ -114,9 +114,7 @@ class TestConditionMapping:
         assert candidates[0].concept_name == "Pneumonia"
         assert candidates[0].domain_id == Domain.CONDITION
 
-    def test_map_congestive_heart_failure(
-        self, mapping_service: DatabaseMappingService
-    ) -> None:
+    def test_map_congestive_heart_failure(self, mapping_service: DatabaseMappingService) -> None:
         """Test mapping 'congestive heart failure' to OMOP concept."""
         candidates = mapping_service.map_mention("congestive heart failure")
         assert len(candidates) > 0
@@ -226,9 +224,7 @@ class TestMeasurementMapping:
 class TestDomainFiltering:
     """Tests for domain-filtered mapping accuracy."""
 
-    def test_condition_domain_filter(
-        self, mapping_service: DatabaseMappingService
-    ) -> None:
+    def test_condition_domain_filter(self, mapping_service: DatabaseMappingService) -> None:
         """Test filtering by condition domain."""
         candidates = mapping_service.map_mention("fever", domain=Domain.CONDITION)
         for candidate in candidates:
@@ -240,13 +236,9 @@ class TestDomainFiltering:
         for candidate in candidates:
             assert candidate.domain_id == Domain.DRUG
 
-    def test_measurement_domain_filter(
-        self, mapping_service: DatabaseMappingService
-    ) -> None:
+    def test_measurement_domain_filter(self, mapping_service: DatabaseMappingService) -> None:
         """Test filtering by measurement domain."""
-        candidates = mapping_service.map_mention(
-            "blood pressure", domain=Domain.MEASUREMENT
-        )
+        candidates = mapping_service.map_mention("blood pressure", domain=Domain.MEASUREMENT)
         for candidate in candidates:
             assert candidate.domain_id == Domain.MEASUREMENT
 
@@ -351,4 +343,6 @@ class TestSyntheticNotesMapping:
                 mapped_count += 1
 
         # All drugs should map since they're in the vocabulary
-        assert mapped_count == len(drug_terms), f"Only {mapped_count}/{len(drug_terms)} drugs mapped"
+        assert mapped_count == len(drug_terms), (
+            f"Only {mapped_count}/{len(drug_terms)} drugs mapped"
+        )

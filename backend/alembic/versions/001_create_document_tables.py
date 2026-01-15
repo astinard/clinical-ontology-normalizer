@@ -23,7 +23,10 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     # Create job_status enum type
     job_status_enum = postgresql.ENUM(
-        "queued", "processing", "completed", "failed",
+        "queued",
+        "processing",
+        "completed",
+        "failed",
         name="job_status",
         create_type=False,
     )
@@ -31,7 +34,8 @@ def upgrade() -> None:
 
     # Create resource_type enum type
     resource_type_enum = postgresql.ENUM(
-        "fhir_bundle", "csv",
+        "fhir_bundle",
+        "csv",
         name="resource_type",
         create_type=False,
     )
@@ -41,7 +45,9 @@ def upgrade() -> None:
     op.create_table(
         "documents",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("patient_id", sa.String(255), nullable=False, index=True),
         sa.Column("note_type", sa.String(100), nullable=False),
         sa.Column("text", sa.Text(), nullable=False),
@@ -61,7 +67,9 @@ def upgrade() -> None:
     op.create_table(
         "structured_resources",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("patient_id", sa.String(255), nullable=False, index=True),
         sa.Column("resource_type", resource_type_enum, nullable=False),
         sa.Column("payload", postgresql.JSONB(), nullable=False),

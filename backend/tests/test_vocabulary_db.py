@@ -116,9 +116,7 @@ class TestDatabaseMappingServiceWithDB:
 
     @pytest.fixture(autouse=True)
     def setup_vocabulary(self, vocab_session) -> None:
-        fixture_path = (
-            Path(__file__).parent.parent.parent / "fixtures" / "omop_vocabulary.json"
-        )
+        fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "omop_vocabulary.json"
         with open(fixture_path) as f:
             data = json.load(f)
 
@@ -238,19 +236,13 @@ class TestDatabaseMappingServiceWithDB:
             assert candidate.score < 1.0
             assert candidate.score >= 0.3  # Minimum threshold
 
-    def test_fuzzy_match_respects_domain_filter(
-        self, service: DatabaseMappingService
-    ) -> None:
+    def test_fuzzy_match_respects_domain_filter(self, service: DatabaseMappingService) -> None:
         """Test fuzzy matching respects domain filter."""
-        candidates = service.map_mention(
-            "blood glucose", domain=Domain.MEASUREMENT, limit=10
-        )
+        candidates = service.map_mention("blood glucose", domain=Domain.MEASUREMENT, limit=10)
         for candidate in candidates:
             assert candidate.domain_id == Domain.MEASUREMENT
 
-    def test_exact_matches_ranked_before_fuzzy(
-        self, service: DatabaseMappingService
-    ) -> None:
+    def test_exact_matches_ranked_before_fuzzy(self, service: DatabaseMappingService) -> None:
         """Test that exact matches come before fuzzy matches."""
         candidates = service.map_mention("fever", limit=10)
         if len(candidates) > 1:
@@ -272,9 +264,7 @@ class TestConceptsInDatabase:
 
     @pytest.fixture(autouse=True)
     def setup_vocabulary(self, vocab_session) -> None:
-        fixture_path = (
-            Path(__file__).parent.parent.parent / "fixtures" / "omop_vocabulary.json"
-        )
+        fixture_path = Path(__file__).parent.parent.parent / "fixtures" / "omop_vocabulary.json"
         with open(fixture_path) as f:
             data = json.load(f)
 
@@ -311,9 +301,7 @@ class TestConceptsInDatabase:
         assert len(synonyms) > 0
 
     def test_concept_synonym_relationship(self, vocab_session) -> None:
-        result = vocab_session.execute(
-            select(Concept).where(Concept.concept_id == 437663)
-        )
+        result = vocab_session.execute(select(Concept).where(Concept.concept_id == 437663))
         fever = result.scalar_one()
         assert fever.concept_name == "Fever"
 
@@ -326,9 +314,7 @@ class TestConceptsInDatabase:
         assert "pyrexia" in synonym_names
 
     def test_condition_domain_concepts(self, vocab_session) -> None:
-        result = vocab_session.execute(
-            select(Concept).where(Concept.domain_id == "Condition")
-        )
+        result = vocab_session.execute(select(Concept).where(Concept.domain_id == "Condition"))
         conditions = result.scalars().all()
         condition_names = [c.concept_name.lower() for c in conditions]
         assert any("fever" in name for name in condition_names)
@@ -336,9 +322,7 @@ class TestConceptsInDatabase:
         assert any("diabetes" in name for name in condition_names)
 
     def test_drug_domain_concepts(self, vocab_session) -> None:
-        result = vocab_session.execute(
-            select(Concept).where(Concept.domain_id == "Drug")
-        )
+        result = vocab_session.execute(select(Concept).where(Concept.domain_id == "Drug"))
         drugs = result.scalars().all()
         drug_names = [d.concept_name.lower() for d in drugs]
         assert any("metformin" in name for name in drug_names)

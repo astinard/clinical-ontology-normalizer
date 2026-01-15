@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from app.schemas.base import Assertion, Experiencer, Temporality
-from app.services import ExtractedMention, RuleBasedNLPService
+from app.services import RuleBasedNLPService
 from app.services.vocabulary import VocabularyService
 
 

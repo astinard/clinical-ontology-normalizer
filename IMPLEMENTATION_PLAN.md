@@ -52,7 +52,7 @@ Each task should be completed in one iteration with tests passing before checkin
 - [x] 5.2 Load local vocabulary fixture into database
 - [x] 5.3 Implement exact-match concept lookup
 - [x] 5.4 Implement fuzzy/similarity-based concept lookup
-- [ ] 5.5 Create MentionConceptCandidate records with scores
+- [x] 5.5 Create MentionConceptCandidate records with scores
 - [ ] 5.6 Add tests validating mapping accuracy on fixtures
 
 ## Phase 6: ClinicalFact Construction

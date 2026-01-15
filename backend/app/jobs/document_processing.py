@@ -9,14 +9,16 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_sync_engine
 from app.models import Document
-from app.models.mention import Mention
+from app.models.mention import Mention, MentionConceptCandidate
 from app.schemas.base import JobStatus
+from app.services.mapping_db import DatabaseMappingService
 from app.services.nlp_rule_based import RuleBasedNLPService
 
 logger = logging.getLogger(__name__)
 
-# Singleton NLP service for reuse across job calls
+# Singleton services for reuse across job calls
 _nlp_service: RuleBasedNLPService | None = None
+_mapping_service: DatabaseMappingService | None = None
 
 
 def get_nlp_service() -> RuleBasedNLPService:
@@ -25,6 +27,20 @@ def get_nlp_service() -> RuleBasedNLPService:
     if _nlp_service is None:
         _nlp_service = RuleBasedNLPService()
     return _nlp_service
+
+
+def get_mapping_service(session: Session) -> DatabaseMappingService:
+    """Get or create the mapping service singleton.
+
+    The mapping service needs to be loaded from the database
+    using a session, so we pass the session here.
+    """
+    global _mapping_service
+    if _mapping_service is None:
+        _mapping_service = DatabaseMappingService()
+    if not _mapping_service.is_loaded():
+        _mapping_service.load_from_db(session)
+    return _mapping_service
 
 
 def process_document(document_id: str) -> dict:
@@ -99,9 +115,36 @@ def process_document(document_id: str) -> dict:
 
             session.flush()  # Assign IDs to mentions
 
-            # TODO: Phase 5 - Map mentions to OMOP concepts
-            # for mention in mention_records:
-            #     mapping_service.map_to_concepts(mention)
+            # Phase 5: Map mentions to OMOP concepts
+            mapping_service = get_mapping_service(session)
+            candidate_count = 0
+
+            for mention in mention_records:
+                candidates = mapping_service.map_mention(
+                    text=mention.text,
+                    domain=None,  # Allow any domain
+                    limit=5,  # Top 5 candidates per mention
+                )
+
+                for candidate in candidates:
+                    concept_candidate = MentionConceptCandidate(
+                        mention_id=mention.id,
+                        omop_concept_id=candidate.omop_concept_id,
+                        concept_name=candidate.concept_name,
+                        concept_code=candidate.concept_code,
+                        vocabulary_id=candidate.vocabulary_id,
+                        domain_id=candidate.domain_id,
+                        score=candidate.score,
+                        method=candidate.method.value,
+                        rank=candidate.rank,
+                    )
+                    session.add(concept_candidate)
+                    candidate_count += 1
+
+            logger.info(
+                f"Created {candidate_count} concept candidates for "
+                f"{len(mention_records)} mentions"
+            )
 
             # TODO: Phase 6 - Create ClinicalFacts
             # fact_builder.create_facts(document.id, mention_records)
@@ -119,7 +162,8 @@ def process_document(document_id: str) -> dict:
 
             logger.info(
                 f"Document processing completed for document_id={document_id}, "
-                f"mention_count={len(mention_records)}"
+                f"mention_count={len(mention_records)}, "
+                f"candidate_count={candidate_count}"
             )
 
             return {
@@ -127,6 +171,7 @@ def process_document(document_id: str) -> dict:
                 "document_id": document_id,
                 "patient_id": document.patient_id,
                 "mention_count": len(mention_records),
+                "candidate_count": candidate_count,
             }
 
     except Exception as e:

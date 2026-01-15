@@ -241,3 +241,220 @@ class TestDocumentAPIJobEnqueue:
 
         assert "document" in QUEUE_NAMES
         assert QUEUE_NAMES["document"] == "document_processing"
+
+
+class TestMentionConceptCandidateCreation:
+    """Tests for Phase 5: MentionConceptCandidate record creation."""
+
+    @patch("app.jobs.document_processing.get_sync_engine")
+    @patch("app.jobs.document_processing.Session")
+    @patch("app.jobs.document_processing.get_mapping_service")
+    def test_process_document_creates_concept_candidates(
+        self,
+        mock_get_mapping: MagicMock,
+        mock_session_class: MagicMock,
+        mock_get_sync_engine: MagicMock,
+    ) -> None:
+        """Test that processing creates MentionConceptCandidate records."""
+        from app.jobs import process_document
+        from app.models.mention import MentionConceptCandidate
+        from app.schemas.base import Domain
+        from app.services.mapping import ConceptCandidate, MappingMethod
+
+        mock_session = MagicMock()
+        mock_session_class.return_value.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_class.return_value.__exit__ = MagicMock(return_value=None)
+
+        # Create mock document
+        mock_document = MagicMock()
+        mock_document.patient_id = "patient-test"
+        mock_document.note_type = "progress_note"
+        mock_document.text = "Patient has fever."
+
+        # Mock execute
+        call_count = [0]
+
+        def mock_execute(stmt):
+            call_count[0] += 1
+            result = MagicMock()
+            if call_count[0] == 2:
+                result.scalar_one_or_none.return_value = mock_document
+            return result
+
+        mock_session.execute.side_effect = mock_execute
+
+        # Mock mapping service to return candidates
+        mock_mapping = MagicMock()
+        mock_mapping.map_mention.return_value = [
+            ConceptCandidate(
+                omop_concept_id=437663,
+                concept_name="Fever",
+                concept_code="437663",
+                vocabulary_id="SNOMED",
+                domain_id=Domain.CONDITION,
+                score=1.0,
+                method=MappingMethod.EXACT,
+                rank=1,
+            )
+        ]
+        mock_get_mapping.return_value = mock_mapping
+
+        document_id = str(uuid4())
+        result = process_document(document_id)
+
+        assert result["success"] is True
+        assert result["candidate_count"] >= 1
+
+        # Check MentionConceptCandidate objects were added
+        add_calls = mock_session.add.call_args_list
+        candidates_added = [
+            call[0][0]
+            for call in add_calls
+            if isinstance(call[0][0], MentionConceptCandidate)
+        ]
+        assert len(candidates_added) >= 1
+
+    @patch("app.jobs.document_processing.get_sync_engine")
+    @patch("app.jobs.document_processing.Session")
+    @patch("app.jobs.document_processing.get_mapping_service")
+    def test_candidate_has_correct_attributes(
+        self,
+        mock_get_mapping: MagicMock,
+        mock_session_class: MagicMock,
+        mock_get_sync_engine: MagicMock,
+    ) -> None:
+        """Test that MentionConceptCandidate has correct attributes."""
+        from app.jobs import process_document
+        from app.models.mention import MentionConceptCandidate
+        from app.schemas.base import Domain
+        from app.services.mapping import ConceptCandidate, MappingMethod
+
+        mock_session = MagicMock()
+        mock_session_class.return_value.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_class.return_value.__exit__ = MagicMock(return_value=None)
+
+        mock_document = MagicMock()
+        mock_document.patient_id = "patient-attr"
+        mock_document.note_type = "progress_note"
+        mock_document.text = "Patient has fever."
+
+        call_count = [0]
+
+        def mock_execute(stmt):
+            call_count[0] += 1
+            result = MagicMock()
+            if call_count[0] == 2:
+                result.scalar_one_or_none.return_value = mock_document
+            return result
+
+        mock_session.execute.side_effect = mock_execute
+
+        mock_mapping = MagicMock()
+        mock_mapping.map_mention.return_value = [
+            ConceptCandidate(
+                omop_concept_id=437663,
+                concept_name="Fever",
+                concept_code="437663",
+                vocabulary_id="SNOMED",
+                domain_id=Domain.CONDITION,
+                score=0.95,
+                method=MappingMethod.FUZZY,
+                rank=1,
+            )
+        ]
+        mock_get_mapping.return_value = mock_mapping
+
+        document_id = str(uuid4())
+        process_document(document_id)
+
+        add_calls = mock_session.add.call_args_list
+        candidates = [
+            call[0][0]
+            for call in add_calls
+            if isinstance(call[0][0], MentionConceptCandidate)
+        ]
+
+        assert len(candidates) >= 1
+        candidate = candidates[0]
+        assert candidate.omop_concept_id == 437663
+        assert candidate.concept_name == "Fever"
+        assert candidate.vocabulary_id == "SNOMED"
+        assert candidate.domain_id == Domain.CONDITION
+        assert candidate.score == 0.95
+        assert candidate.method == "fuzzy"
+        assert candidate.rank == 1
+
+    @patch("app.jobs.document_processing.get_sync_engine")
+    @patch("app.jobs.document_processing.Session")
+    @patch("app.jobs.document_processing.get_mapping_service")
+    def test_multiple_candidates_per_mention(
+        self,
+        mock_get_mapping: MagicMock,
+        mock_session_class: MagicMock,
+        mock_get_sync_engine: MagicMock,
+    ) -> None:
+        """Test that multiple candidates per mention are created."""
+        from app.jobs import process_document
+        from app.models.mention import MentionConceptCandidate
+        from app.schemas.base import Domain
+        from app.services.mapping import ConceptCandidate, MappingMethod
+
+        mock_session = MagicMock()
+        mock_session_class.return_value.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_class.return_value.__exit__ = MagicMock(return_value=None)
+
+        mock_document = MagicMock()
+        mock_document.patient_id = "patient-multi"
+        mock_document.note_type = "progress_note"
+        mock_document.text = "Patient has fever."
+
+        call_count = [0]
+
+        def mock_execute(stmt):
+            call_count[0] += 1
+            result = MagicMock()
+            if call_count[0] == 2:
+                result.scalar_one_or_none.return_value = mock_document
+            return result
+
+        mock_session.execute.side_effect = mock_execute
+
+        # Return multiple candidates
+        mock_mapping = MagicMock()
+        mock_mapping.map_mention.return_value = [
+            ConceptCandidate(
+                omop_concept_id=437663,
+                concept_name="Fever",
+                concept_code="437663",
+                vocabulary_id="SNOMED",
+                domain_id=Domain.CONDITION,
+                score=1.0,
+                method=MappingMethod.EXACT,
+                rank=1,
+            ),
+            ConceptCandidate(
+                omop_concept_id=437664,
+                concept_name="High temperature",
+                concept_code="437664",
+                vocabulary_id="SNOMED",
+                domain_id=Domain.CONDITION,
+                score=0.8,
+                method=MappingMethod.FUZZY,
+                rank=2,
+            ),
+        ]
+        mock_get_mapping.return_value = mock_mapping
+
+        document_id = str(uuid4())
+        result = process_document(document_id)
+
+        # Should have multiple candidates per mention
+        assert result["candidate_count"] >= 2
+
+        add_calls = mock_session.add.call_args_list
+        candidates = [
+            call[0][0]
+            for call in add_calls
+            if isinstance(call[0][0], MentionConceptCandidate)
+        ]
+        assert len(candidates) >= 2

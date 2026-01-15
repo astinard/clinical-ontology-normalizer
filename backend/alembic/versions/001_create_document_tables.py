@@ -60,8 +60,8 @@ def upgrade() -> None:
         ),
         sa.Column("processed_at", sa.DateTime(timezone=True), nullable=True),
     )
-    op.create_index("ix_documents_patient_id", "documents", ["patient_id"])
-    op.create_index("ix_documents_status", "documents", ["status"])
+    op.create_index("ix_documents_patient_id", "documents", ["patient_id"], if_not_exists=True)
+    op.create_index("ix_documents_status", "documents", ["status"], if_not_exists=True)
 
     # Create structured_resources table
     op.create_table(
@@ -82,8 +82,8 @@ def upgrade() -> None:
         ),
         sa.Column("processed_at", sa.DateTime(timezone=True), nullable=True),
     )
-    op.create_index("ix_structured_resources_patient_id", "structured_resources", ["patient_id"])
-    op.create_index("ix_structured_resources_status", "structured_resources", ["status"])
+    op.create_index("ix_structured_resources_patient_id", "structured_resources", ["patient_id"], if_not_exists=True)
+    op.create_index("ix_structured_resources_status", "structured_resources", ["status"], if_not_exists=True)
 
 
 def downgrade() -> None:

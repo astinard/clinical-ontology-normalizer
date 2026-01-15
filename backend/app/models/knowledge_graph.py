@@ -29,7 +29,7 @@ class KGNode(Base):
         index=True,
     )
     node_type: Mapped[NodeType] = mapped_column(
-        Enum(NodeType, name="node_type", create_constraint=True),
+        Enum(NodeType, name="node_type", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
@@ -103,7 +103,7 @@ class KGEdge(Base):
         index=True,
     )
     edge_type: Mapped[EdgeType] = mapped_column(
-        Enum(EdgeType, name="edge_type", create_constraint=True),
+        Enum(EdgeType, name="edge_type", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )

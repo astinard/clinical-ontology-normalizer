@@ -24,7 +24,7 @@ def upgrade() -> None:
         "documents",
         sa.Column("job_id", postgresql.UUID(as_uuid=True), nullable=True),
     )
-    op.create_index("ix_documents_job_id", "documents", ["job_id"], unique=False)
+    op.create_index("ix_documents_job_id", "documents", ["job_id"], unique=False, if_not_exists=True)
 
     # Add job_id to structured_resources
     op.add_column(

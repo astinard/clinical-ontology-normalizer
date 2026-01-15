@@ -41,7 +41,7 @@ class Document(Base):
         default=dict,
     )
     status: Mapped[JobStatus] = mapped_column(
-        Enum(JobStatus, name="job_status", create_constraint=True),
+        Enum(JobStatus, name="job_status", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=JobStatus.QUEUED,
         index=True,
@@ -75,7 +75,7 @@ class StructuredResource(Base):
         index=True,
     )
     resource_type: Mapped[ResourceType] = mapped_column(
-        Enum(ResourceType, name="resource_type", create_constraint=True),
+        Enum(ResourceType, name="resource_type", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     payload: Mapped[dict] = mapped_column(
@@ -89,7 +89,7 @@ class StructuredResource(Base):
         default=dict,
     )
     status: Mapped[JobStatus] = mapped_column(
-        Enum(JobStatus, name="job_status", create_constraint=True),
+        Enum(JobStatus, name="job_status", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=JobStatus.QUEUED,
         index=True,

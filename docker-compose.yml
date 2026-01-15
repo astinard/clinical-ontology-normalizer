@@ -71,7 +71,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: con-worker
-    command: ["uv", "run", "rq", "worker", "--url", "redis://redis:6379/0", "default"]
+    command: ["uv", "run", "rq", "worker", "--url", "redis://redis:6379/0", "document_processing", "default"]
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-clinical_ontology}
       REDIS_URL: redis://redis:6379/0
@@ -82,7 +82,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Database migrations (run once)
+  # Database migrations (run manually with: docker compose run --rm migrations)
   migrations:
     build:
       context: ./backend
@@ -94,7 +94,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    restart: "no"
+    profiles:
+      - migrate
 
   # Next.js Frontend
   frontend:

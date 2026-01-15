@@ -61,9 +61,9 @@ def upgrade() -> None:
         sa.Column("label", sa.String(500), nullable=False),
         sa.Column("properties", postgresql.JSONB(), nullable=False, server_default="{}"),
     )
-    op.create_index("ix_kg_nodes_patient_id", "kg_nodes", ["patient_id"])
-    op.create_index("ix_kg_nodes_node_type", "kg_nodes", ["node_type"])
-    op.create_index("ix_kg_nodes_omop_concept_id", "kg_nodes", ["omop_concept_id"])
+    op.create_index("ix_kg_nodes_patient_id", "kg_nodes", ["patient_id"], if_not_exists=True)
+    op.create_index("ix_kg_nodes_node_type", "kg_nodes", ["node_type"], if_not_exists=True)
+    op.create_index("ix_kg_nodes_omop_concept_id", "kg_nodes", ["omop_concept_id"], if_not_exists=True)
 
     # Create kg_edges table
     op.create_table(
@@ -94,10 +94,10 @@ def upgrade() -> None:
         ),
         sa.Column("properties", postgresql.JSONB(), nullable=False, server_default="{}"),
     )
-    op.create_index("ix_kg_edges_patient_id", "kg_edges", ["patient_id"])
-    op.create_index("ix_kg_edges_source_node_id", "kg_edges", ["source_node_id"])
-    op.create_index("ix_kg_edges_target_node_id", "kg_edges", ["target_node_id"])
-    op.create_index("ix_kg_edges_edge_type", "kg_edges", ["edge_type"])
+    op.create_index("ix_kg_edges_patient_id", "kg_edges", ["patient_id"], if_not_exists=True)
+    op.create_index("ix_kg_edges_source_node_id", "kg_edges", ["source_node_id"], if_not_exists=True)
+    op.create_index("ix_kg_edges_target_node_id", "kg_edges", ["target_node_id"], if_not_exists=True)
+    op.create_index("ix_kg_edges_edge_type", "kg_edges", ["edge_type"], if_not_exists=True)
 
 
 def downgrade() -> None:

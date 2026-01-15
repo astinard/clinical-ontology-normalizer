@@ -33,7 +33,7 @@ class ClinicalFact(Base):
         index=True,
     )
     domain: Mapped[Domain] = mapped_column(
-        Enum(Domain, name="domain_type", create_constraint=True, create_type=False),
+        Enum(Domain, name="domain_type", create_constraint=True, create_type=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
     )
@@ -47,18 +47,18 @@ class ClinicalFact(Base):
         nullable=False,
     )
     assertion: Mapped[Assertion] = mapped_column(
-        Enum(Assertion, name="assertion_type", create_constraint=True, create_type=False),
+        Enum(Assertion, name="assertion_type", create_constraint=True, create_type=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=Assertion.PRESENT,
         index=True,
     )
     temporality: Mapped[Temporality] = mapped_column(
-        Enum(Temporality, name="temporality_type", create_constraint=True, create_type=False),
+        Enum(Temporality, name="temporality_type", create_constraint=True, create_type=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=Temporality.CURRENT,
     )
     experiencer: Mapped[Experiencer] = mapped_column(
-        Enum(Experiencer, name="experiencer_type", create_constraint=True, create_type=False),
+        Enum(Experiencer, name="experiencer_type", create_constraint=True, create_type=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=Experiencer.PATIENT,
     )
@@ -127,7 +127,7 @@ class FactEvidence(Base):
         index=True,
     )
     evidence_type: Mapped[EvidenceType] = mapped_column(
-        Enum(EvidenceType, name="evidence_type", create_constraint=True),
+        Enum(EvidenceType, name="evidence_type", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     source_id: Mapped[str] = mapped_column(

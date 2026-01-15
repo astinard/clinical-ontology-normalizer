@@ -24,6 +24,7 @@ RUN uv sync --frozen --no-dev
 COPY app/ ./app/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
+COPY fixtures/ ./fixtures/
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash appuser

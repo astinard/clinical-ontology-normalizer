@@ -35,10 +35,10 @@ def upgrade() -> None:
         sa.Column("concept_class_id", sa.String(50), nullable=False),
         sa.Column("standard_concept", sa.String(1), nullable=True),
     )
-    op.create_index("ix_concepts_concept_id", "concepts", ["concept_id"])
-    op.create_index("ix_concepts_concept_name", "concepts", ["concept_name"])
-    op.create_index("ix_concepts_domain_id", "concepts", ["domain_id"])
-    op.create_index("ix_concepts_vocabulary_id", "concepts", ["vocabulary_id"])
+    op.create_index("ix_concepts_concept_id", "concepts", ["concept_id"], if_not_exists=True)
+    op.create_index("ix_concepts_concept_name", "concepts", ["concept_name"], if_not_exists=True)
+    op.create_index("ix_concepts_domain_id", "concepts", ["domain_id"], if_not_exists=True)
+    op.create_index("ix_concepts_vocabulary_id", "concepts", ["vocabulary_id"], if_not_exists=True)
 
     # Create concept_synonyms table with foreign key to concepts
     op.create_table(
@@ -56,7 +56,7 @@ def upgrade() -> None:
         sa.Column("concept_synonym_name", sa.String(1000), nullable=False),
         sa.Column("language_concept_id", sa.Integer(), nullable=False, server_default="4180186"),
     )
-    op.create_index("ix_concept_synonyms_concept_id", "concept_synonyms", ["concept_id"])
+    op.create_index("ix_concept_synonyms_concept_id", "concept_synonyms", ["concept_id"], if_not_exists=True)
     op.create_index(
         "ix_concept_synonyms_concept_synonym_name", "concept_synonyms", ["concept_synonym_name"]
     )

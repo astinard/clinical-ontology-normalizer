@@ -41,7 +41,7 @@ def upgrade() -> None:
         sa.Column("patient_id", sa.String(255), nullable=False),
         sa.Column(
             "domain",
-            sa.Enum(
+            postgresql.ENUM(
                 "condition",
                 "drug",
                 "measurement",
@@ -58,19 +58,19 @@ def upgrade() -> None:
         sa.Column("concept_name", sa.String(500), nullable=False),
         sa.Column(
             "assertion",
-            sa.Enum("present", "absent", "possible", name="assertion_type", create_type=False),
+            postgresql.ENUM("present", "absent", "possible", name="assertion_type", create_type=False),
             nullable=False,
             server_default="present",
         ),
         sa.Column(
             "temporality",
-            sa.Enum("current", "past", "future", name="temporality_type", create_type=False),
+            postgresql.ENUM("current", "past", "future", name="temporality_type", create_type=False),
             nullable=False,
             server_default="current",
         ),
         sa.Column(
             "experiencer",
-            sa.Enum("patient", "family", "other", name="experiencer_type", create_type=False),
+            postgresql.ENUM("patient", "family", "other", name="experiencer_type", create_type=False),
             nullable=False,
             server_default="patient",
         ),
@@ -80,10 +80,10 @@ def upgrade() -> None:
         sa.Column("start_date", sa.DateTime(timezone=True), nullable=True),
         sa.Column("end_date", sa.DateTime(timezone=True), nullable=True),
     )
-    op.create_index("ix_clinical_facts_patient_id", "clinical_facts", ["patient_id"])
-    op.create_index("ix_clinical_facts_domain", "clinical_facts", ["domain"])
-    op.create_index("ix_clinical_facts_omop_concept_id", "clinical_facts", ["omop_concept_id"])
-    op.create_index("ix_clinical_facts_assertion", "clinical_facts", ["assertion"])
+    op.create_index("ix_clinical_facts_patient_id", "clinical_facts", ["patient_id"], if_not_exists=True)
+    op.create_index("ix_clinical_facts_domain", "clinical_facts", ["domain"], if_not_exists=True)
+    op.create_index("ix_clinical_facts_omop_concept_id", "clinical_facts", ["omop_concept_id"], if_not_exists=True)
+    op.create_index("ix_clinical_facts_assertion", "clinical_facts", ["assertion"], if_not_exists=True)
 
     # Create fact_evidence table
     op.create_table(
@@ -104,7 +104,7 @@ def upgrade() -> None:
         sa.Column("weight", sa.Float(), nullable=False, server_default="1.0"),
         sa.Column("notes", sa.Text(), nullable=True),
     )
-    op.create_index("ix_fact_evidence_fact_id", "fact_evidence", ["fact_id"])
+    op.create_index("ix_fact_evidence_fact_id", "fact_evidence", ["fact_id"], if_not_exists=True)
 
 
 def downgrade() -> None:

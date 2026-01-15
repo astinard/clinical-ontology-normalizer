@@ -47,18 +47,18 @@ class Mention(Base):
         nullable=True,
     )
     assertion: Mapped[Assertion] = mapped_column(
-        Enum(Assertion, name="assertion_type", create_constraint=True),
+        Enum(Assertion, name="assertion_type", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=Assertion.PRESENT,
         index=True,
     )
     temporality: Mapped[Temporality] = mapped_column(
-        Enum(Temporality, name="temporality_type", create_constraint=True),
+        Enum(Temporality, name="temporality_type", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=Temporality.CURRENT,
     )
     experiencer: Mapped[Experiencer] = mapped_column(
-        Enum(Experiencer, name="experiencer_type", create_constraint=True),
+        Enum(Experiencer, name="experiencer_type", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=Experiencer.PATIENT,
     )
@@ -118,7 +118,7 @@ class MentionConceptCandidate(Base):
         nullable=False,
     )
     domain_id: Mapped[Domain] = mapped_column(
-        Enum(Domain, name="domain_type", create_constraint=True),
+        Enum(Domain, name="domain_type", create_constraint=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
     )
     score: Mapped[float] = mapped_column(

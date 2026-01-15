@@ -88,8 +88,8 @@ def upgrade() -> None:
         sa.Column("experiencer", experiencer_enum, nullable=False, server_default="patient"),
         sa.Column("confidence", sa.Float(), nullable=False, server_default="1.0"),
     )
-    op.create_index("ix_mentions_document_id", "mentions", ["document_id"])
-    op.create_index("ix_mentions_assertion", "mentions", ["assertion"])
+    op.create_index("ix_mentions_document_id", "mentions", ["document_id"], if_not_exists=True)
+    op.create_index("ix_mentions_assertion", "mentions", ["assertion"], if_not_exists=True)
 
     # Create mention_concept_candidates table
     op.create_table(

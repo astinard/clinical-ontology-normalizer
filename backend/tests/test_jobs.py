@@ -5,8 +5,6 @@ from uuid import uuid4
 
 import pytest
 
-from app.schemas.base import JobStatus
-
 
 class TestProcessDocumentModule:
     """Test process_document module imports and structure."""

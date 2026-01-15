@@ -290,3 +290,166 @@ class TestDocumentUploadWithSyntheticNotes:
         }
         response = await client_with_mock_db.post("/documents", json=payload)
         assert response.status_code == 201
+
+
+class TestDocumentUploadJobEnqueue:
+    """Test job enqueueing on document upload."""
+
+    @pytest.fixture
+    def valid_document_payload(self) -> dict:
+        """Valid document upload payload."""
+        return {
+            "patient_id": "patient-123",
+            "note_type": "progress_note",
+            "text": "Patient presents with fever and cough for 3 days.",
+            "metadata": {"encounter_date": "2026-01-14"},
+        }
+
+    @pytest.mark.asyncio
+    async def test_upload_enqueues_job(
+        self,
+        mock_db_session: MagicMock,
+        mock_enqueue_job: MagicMock,
+        valid_document_payload: dict,
+    ) -> None:
+        """Test that document upload enqueues a processing job."""
+        mock_db_session.add = MagicMock(
+            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
+        )
+
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue_job):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                await ac.post("/documents", json=valid_document_payload)
+
+        app.dependency_overrides.clear()
+        assert mock_enqueue_job.called
+
+    @pytest.mark.asyncio
+    async def test_upload_enqueues_to_document_queue(
+        self,
+        mock_db_session: MagicMock,
+        mock_enqueue_job: MagicMock,
+        valid_document_payload: dict,
+    ) -> None:
+        """Test that job is enqueued to the document processing queue."""
+        mock_db_session.add = MagicMock(
+            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
+        )
+
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue_job):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                await ac.post("/documents", json=valid_document_payload)
+
+        app.dependency_overrides.clear()
+        # Check that enqueue_job was called with the correct queue name
+        call_kwargs = mock_enqueue_job.call_args
+        assert call_kwargs.kwargs.get("queue_name") == "document_processing"
+
+    @pytest.mark.asyncio
+    async def test_upload_enqueues_with_job_id(
+        self,
+        mock_db_session: MagicMock,
+        mock_enqueue_job: MagicMock,
+        valid_document_payload: dict,
+    ) -> None:
+        """Test that job_id in response matches the enqueued job."""
+        mock_db_session.add = MagicMock(
+            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
+        )
+
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue_job):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                response = await ac.post("/documents", json=valid_document_payload)
+
+        app.dependency_overrides.clear()
+        data = response.json()
+        # The job_id in response should match what was passed to enqueue_job
+        call_kwargs = mock_enqueue_job.call_args
+        assert str(call_kwargs.kwargs.get("job_id")) == data["job_id"]
+
+    @pytest.mark.asyncio
+    async def test_upload_succeeds_when_redis_unavailable(
+        self,
+        mock_db_session: MagicMock,
+        valid_document_payload: dict,
+    ) -> None:
+        """Test that upload succeeds even when Redis is unavailable."""
+        mock_db_session.add = MagicMock(
+            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
+        )
+
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        # Mock enqueue_job to raise a connection error
+        mock_enqueue = MagicMock(side_effect=ConnectionError("Redis unavailable"))
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                response = await ac.post("/documents", json=valid_document_payload)
+
+        app.dependency_overrides.clear()
+        # Upload should still succeed
+        assert response.status_code == 201
+        data = response.json()
+        assert "document_id" in data
+        assert data["status"] == "queued"
+
+    @pytest.mark.asyncio
+    async def test_upload_succeeds_when_rq_not_installed(
+        self,
+        mock_db_session: MagicMock,
+        valid_document_payload: dict,
+    ) -> None:
+        """Test that upload succeeds even when RQ is not installed."""
+        mock_db_session.add = MagicMock(
+            side_effect=lambda doc: setattr(doc, "id", str(uuid4()))
+        )
+
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        # Mock enqueue_job to raise ImportError (RQ not installed)
+        mock_enqueue = MagicMock(side_effect=ImportError("No module named 'rq'"))
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                response = await ac.post("/documents", json=valid_document_payload)
+
+        app.dependency_overrides.clear()
+        # Upload should still succeed
+        assert response.status_code == 201

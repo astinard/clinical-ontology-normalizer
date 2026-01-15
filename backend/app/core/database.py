@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, create_engine, func
+from sqlalchemy import DateTime, Engine, create_engine, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -22,7 +22,7 @@ engine = create_async_engine(
 _sync_engine = None
 
 
-def get_sync_engine():
+def get_sync_engine() -> Engine:
     """Get or create sync engine for background jobs.
 
     Lazily creates the sync engine on first use to avoid import errors

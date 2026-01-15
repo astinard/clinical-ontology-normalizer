@@ -2,7 +2,6 @@
 
 import logging
 from datetime import UTC, datetime
-from uuid import UUID
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session

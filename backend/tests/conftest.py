@@ -22,6 +22,7 @@ def mock_db_session() -> MagicMock:
     session.commit = AsyncMock()
     session.rollback = AsyncMock()
     session.close = AsyncMock()
+    session.execute = AsyncMock()
     return session
 
 

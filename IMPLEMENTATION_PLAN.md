@@ -33,7 +33,7 @@ Each task should be completed in one iteration with tests passing before checkin
 - [x] 3.2 Create document upload endpoint (POST /documents)
 - [x] 3.3 Add Redis connection and RQ job queue setup
 - [x] 3.4 Create job enqueue logic on document upload
-- [ ] 3.5 Add job status endpoint (GET /jobs/{job_id})
+- [x] 3.5 Add job status endpoint (GET /jobs/{job_id})
 - [ ] 3.6 Add document retrieval endpoint (GET /documents/{doc_id})
 
 ## Phase 4: NLP Pipeline (Mention Extraction)

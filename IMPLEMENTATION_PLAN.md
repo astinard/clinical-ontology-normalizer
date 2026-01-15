@@ -43,8 +43,8 @@ Each task should be completed in one iteration with tests passing before checkin
 - [x] 4.3 Implement negation detection (NegEx-style rules)
 - [x] 4.4 Implement temporality detection (past/current/future)
 - [x] 4.5 Implement experiencer detection (patient/family/other)
-- [ ] 4.6 Create job worker that processes documents and creates Mentions
-- [ ] 4.7 Add tests with synthetic notes validating assertion/temporality/experiencer
+- [x] 4.6 Create job worker that processes documents and creates Mentions
+- [x] 4.7 Add tests with synthetic notes validating assertion/temporality/experiencer
 
 ## Phase 5: OMOP Mapping Service
 

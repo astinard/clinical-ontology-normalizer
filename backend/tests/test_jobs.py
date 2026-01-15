@@ -111,6 +111,89 @@ class TestProcessDocumentFunction:
 
     @patch("app.jobs.document_processing.get_sync_engine")
     @patch("app.jobs.document_processing.Session")
+    def test_process_document_extracts_mentions(
+        self, mock_session_class: MagicMock, mock_get_sync_engine: MagicMock
+    ) -> None:
+        """Test that processing extracts mentions from document text."""
+        from app.jobs import process_document
+
+        mock_session = MagicMock()
+        mock_session_class.return_value.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_class.return_value.__exit__ = MagicMock(return_value=None)
+
+        # Create mock document with known clinical terms
+        mock_document = MagicMock()
+        mock_document.patient_id = "patient-456"
+        mock_document.note_type = "progress_note"
+        mock_document.text = "Patient has fever and cough. No pneumonia."
+
+        # Mock execute to return document on second call
+        call_count = [0]
+
+        def mock_execute(stmt):
+            call_count[0] += 1
+            result = MagicMock()
+            if call_count[0] == 2:  # Second call is the select
+                result.scalar_one_or_none.return_value = mock_document
+            return result
+
+        mock_session.execute.side_effect = mock_execute
+
+        document_id = str(uuid4())
+        result = process_document(document_id)
+
+        assert result["success"] is True
+        # Should extract at least fever, cough, pneumonia
+        assert result["mention_count"] >= 3
+        # Verify session.add was called for each mention
+        assert mock_session.add.call_count >= 3
+
+    @patch("app.jobs.document_processing.get_sync_engine")
+    @patch("app.jobs.document_processing.Session")
+    def test_process_document_creates_mention_records(
+        self, mock_session_class: MagicMock, mock_get_sync_engine: MagicMock
+    ) -> None:
+        """Test that Mention records are created with correct attributes."""
+        from app.jobs import process_document
+        from app.models.mention import Mention
+
+        mock_session = MagicMock()
+        mock_session_class.return_value.__enter__ = MagicMock(return_value=mock_session)
+        mock_session_class.return_value.__exit__ = MagicMock(return_value=None)
+
+        # Create mock document
+        mock_document = MagicMock()
+        mock_document.patient_id = "patient-789"
+        mock_document.note_type = "progress_note"
+        mock_document.text = "Patient has fever."
+
+        # Mock execute
+        call_count = [0]
+
+        def mock_execute(stmt):
+            call_count[0] += 1
+            result = MagicMock()
+            if call_count[0] == 2:
+                result.scalar_one_or_none.return_value = mock_document
+            return result
+
+        mock_session.execute.side_effect = mock_execute
+
+        document_id = str(uuid4())
+        process_document(document_id)
+
+        # Check that Mention objects were added to session
+        add_calls = mock_session.add.call_args_list
+        mentions_added = [call[0][0] for call in add_calls if isinstance(call[0][0], Mention)]
+
+        assert len(mentions_added) >= 1
+        # Verify fever mention attributes
+        fever_mention = next((m for m in mentions_added if "fever" in m.text.lower()), None)
+        assert fever_mention is not None
+        assert fever_mention.document_id == document_id
+
+    @patch("app.jobs.document_processing.get_sync_engine")
+    @patch("app.jobs.document_processing.Session")
     def test_process_document_handles_exception(
         self, mock_session_class: MagicMock, mock_get_sync_engine: MagicMock
     ) -> None:

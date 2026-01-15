@@ -42,6 +42,7 @@ class RuleBasedNLPService(BaseNLPService):
     ]
 
     # Negation triggers (words that indicate absence)
+    # Note: Order matters - check "cannot rule out" for uncertainty first
     NEGATION_TRIGGERS = [
         r"\bno\b",
         r"\bnot\b",
@@ -50,12 +51,16 @@ class RuleBasedNLPService(BaseNLPService):
         r"\bwithout\b",
         r"\babsence\s+of\b",
         r"\bnegative\s+for\b",
-        r"\brules?\s+out\b",
+        r"\bruled\s+out\b",  # Past tense - confirmed absence
         r"\brunlikely\b",
+        r"\bno\s+evidence\s+of\b",
     ]
 
     # Uncertainty triggers (words that indicate possibility)
+    # These should be checked BEFORE negation for proper precedence
     UNCERTAINTY_TRIGGERS = [
+        r"\bcannot\s+rule\s+out\b",  # Uncertain, NOT negated
+        r"\bcan\'?t\s+rule\s+out\b",  # Uncertain, NOT negated
         r"\bpossible\b",
         r"\bprobable\b",
         r"\bsuspected?\b",
@@ -66,6 +71,7 @@ class RuleBasedNLPService(BaseNLPService):
         r"\bappears?\s+to\s+be\b",
         r"\blikely\b",
         r"\bconcern\s+for\b",
+        r"\brule\s+out\b",  # Not yet ruled out = uncertain
     ]
 
     # Past temporality triggers
@@ -161,13 +167,16 @@ class RuleBasedNLPService(BaseNLPService):
                     continue
                 seen_spans.add((start, end))
 
-                # Get context for assertion/temporality/experiencer detection
-                context = self._get_context_window(text, start, end)
+                # Get context for attribute detection
+                # Use preceding context for negation (NegEx-style)
+                preceding_context = self._get_preceding_context(text, start)
+                # Use surrounding context for temporality and experiencer
+                surrounding_context = self._get_context_window(text, start, end)
 
                 # Determine attributes from context
-                assertion = self._detect_assertion(context)
-                temporality = self._detect_temporality(context)
-                experiencer = self._detect_experiencer(context)
+                assertion = self._detect_assertion(preceding_context)
+                temporality = self._detect_temporality(surrounding_context)
+                experiencer = self._detect_experiencer(surrounding_context)
 
                 # Get section name
                 section = self.get_section_name(text, start)
@@ -212,27 +221,50 @@ class RuleBasedNLPService(BaseNLPService):
         context_end = min(len(text), end + window_size)
         return text[context_start:context_end].lower()
 
+    def _get_preceding_context(
+        self,
+        text: str,
+        start: int,
+        window_size: int = 50,
+    ) -> str:
+        """Get text BEFORE a mention for negation detection.
+
+        NegEx-style negation typically only looks at preceding text,
+        not following text.
+
+        Args:
+            text: Full document text.
+            start: Start offset of mention.
+            window_size: Characters to include before mention.
+
+        Returns:
+            Preceding context string (lowercase).
+        """
+        context_start = max(0, start - window_size)
+        return text[context_start:start].lower()
+
     def _detect_assertion(self, context: str) -> Assertion:
         """Detect assertion status from context.
 
-        Checks for negation and uncertainty triggers in the context
-        surrounding a mention.
+        Checks for uncertainty and negation triggers in the context
+        preceding a mention. Uncertainty is checked FIRST because
+        phrases like "cannot rule out" should be POSSIBLE, not ABSENT.
 
         Args:
-            context: Text context around the mention.
+            context: Text context before the mention.
 
         Returns:
             Assertion enum value (PRESENT, ABSENT, or POSSIBLE).
         """
-        # Check for negation first
-        for pattern in self.NEGATION_TRIGGERS:
-            if re.search(pattern, context, re.IGNORECASE):
-                return Assertion.ABSENT
-
-        # Check for uncertainty
+        # Check for uncertainty FIRST (important for "cannot rule out")
         for pattern in self.UNCERTAINTY_TRIGGERS:
             if re.search(pattern, context, re.IGNORECASE):
                 return Assertion.POSSIBLE
+
+        # Then check for negation
+        for pattern in self.NEGATION_TRIGGERS:
+            if re.search(pattern, context, re.IGNORECASE):
+                return Assertion.ABSENT
 
         return Assertion.PRESENT
 

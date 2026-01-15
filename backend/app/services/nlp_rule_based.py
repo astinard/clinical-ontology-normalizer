@@ -4,12 +4,26 @@ Uses regex patterns and vocabulary lookups to extract mentions
 from clinical documents.
 """
 
+import logging
+import os
 import re
+from typing import Protocol
 from uuid import UUID
 
 from app.schemas.base import Assertion, Experiencer, Temporality
 from app.services.nlp import BaseNLPService, ExtractedMention
 from app.services.vocabulary import VocabularyService
+
+logger = logging.getLogger(__name__)
+
+
+class VocabularyServiceProtocol(Protocol):
+    """Protocol for vocabulary services (file-based or database-backed)."""
+
+    @property
+    def concepts(self) -> list: ...
+
+    def load(self) -> None: ...
 
 
 class RuleBasedNLPService(BaseNLPService):
@@ -20,10 +34,16 @@ class RuleBasedNLPService(BaseNLPService):
     2. Using regex patterns to identify common clinical patterns
     3. Applying context rules for negation, temporality, and experiencer
 
+    By default, uses database-backed vocabulary if USE_DB_VOCABULARY=true
+    environment variable is set, otherwise falls back to file-based fixture.
+
     Usage:
+        nlp = RuleBasedNLPService()
+        mentions = nlp.extract_mentions(document.text, document.id)
+
+        # Or with explicit vocabulary service:
         vocab = VocabularyService()
         nlp = RuleBasedNLPService(vocab)
-        mentions = nlp.extract_mentions(document.text, document.id)
     """
 
     # Common patterns for clinical terms not in vocabulary
@@ -99,15 +119,27 @@ class RuleBasedNLPService(BaseNLPService):
         r"\bparent\s+(?:has|had|with|diagnosed)\b",
     ]
 
-    def __init__(self, vocabulary_service: VocabularyService | None = None) -> None:
+    def __init__(self, vocabulary_service: VocabularyServiceProtocol | None = None) -> None:
         """Initialize the rule-based NLP service.
 
         Args:
             vocabulary_service: Optional vocabulary service for term lookup.
-                               If not provided, creates a new instance.
+                               If not provided, uses database vocabulary if
+                               USE_DB_VOCABULARY=true, else file-based fixture.
         """
         super().__init__()
-        self._vocabulary_service = vocabulary_service or VocabularyService()
+
+        if vocabulary_service is not None:
+            self._vocabulary_service = vocabulary_service
+        elif os.environ.get("USE_DB_VOCABULARY", "").lower() == "true":
+            # Use database-backed vocabulary for full OMOP coverage
+            from app.services.vocabulary_db import DatabaseVocabularyService
+            logger.info("Using database-backed vocabulary service")
+            self._vocabulary_service = DatabaseVocabularyService()
+        else:
+            # Fall back to file-based fixture
+            self._vocabulary_service = VocabularyService()
+
         self._term_patterns: list[tuple[re.Pattern[str], str]] = []
         self._initialized = False
 

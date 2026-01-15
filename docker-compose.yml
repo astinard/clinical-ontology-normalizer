@@ -50,6 +50,7 @@ services:
       AUTH_ENABLED: ${AUTH_ENABLED:-false}
       API_KEY: ${API_KEY:-dev-api-key-change-in-production}
       CON_API_KEYS: ${CON_API_KEYS:-}
+      USE_DB_VOCABULARY: ${USE_DB_VOCABULARY:-true}
     ports:
       - "${BACKEND_PORT:-8080}:8000"
     depends_on:
@@ -75,6 +76,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-clinical_ontology}
       REDIS_URL: redis://redis:6379/0
+      USE_DB_VOCABULARY: ${USE_DB_VOCABULARY:-true}
     depends_on:
       postgres:
         condition: service_healthy

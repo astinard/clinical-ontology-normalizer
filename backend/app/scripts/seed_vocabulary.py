@@ -1,12 +1,15 @@
 """Seed script for loading OMOP vocabulary fixture into database.
 
 Usage:
-    python -m app.scripts.seed_vocabulary
+    python -m app.scripts.seed_vocabulary              # Load basic vocabulary (34 concepts)
+    python -m app.scripts.seed_vocabulary --expanded   # Load expanded vocabulary (246 concepts)
 
 This script loads the OMOP concept vocabulary subset from fixtures/omop_vocabulary.json
-into the database for local development and testing.
+or the expanded vocabulary from fixtures/omop_vocabulary_expanded.json into the database
+for local development and testing.
 """
 
+import argparse
 import asyncio
 import json
 import logging
@@ -23,7 +26,7 @@ from app.models import Concept, ConceptSynonym
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Path to vocabulary fixture
+# Path to vocabulary fixtures
 # In Docker container, fixtures are at /app/fixtures/
 # In local development, they're at backend/../fixtures/
 _SCRIPT_DIR = Path(__file__).parent
@@ -32,15 +35,25 @@ FIXTURES_DIR = _BACKEND_DIR / "fixtures"
 # Fallback to project root fixtures if not in backend
 if not FIXTURES_DIR.exists():
     FIXTURES_DIR = _BACKEND_DIR.parent / "fixtures"
+
+# Vocabulary file paths
 VOCABULARY_FILE = FIXTURES_DIR / "omop_vocabulary.json"
+VOCABULARY_FILE_EXPANDED = FIXTURES_DIR / "omop_vocabulary_expanded.json"
 
 
-async def load_vocabulary_fixture() -> dict[str, Any]:
-    """Load vocabulary data from JSON fixture file."""
-    if not VOCABULARY_FILE.exists():
-        raise FileNotFoundError(f"Vocabulary fixture not found: {VOCABULARY_FILE}")
+async def load_vocabulary_fixture(expanded: bool = False) -> dict[str, Any]:
+    """Load vocabulary data from JSON fixture file.
 
-    with open(VOCABULARY_FILE) as f:
+    Args:
+        expanded: If True, load the expanded vocabulary (~246 concepts).
+                 If False, load the basic vocabulary (~34 concepts).
+    """
+    vocab_file = VOCABULARY_FILE_EXPANDED if expanded else VOCABULARY_FILE
+    if not vocab_file.exists():
+        raise FileNotFoundError(f"Vocabulary fixture not found: {vocab_file}")
+
+    logger.info(f"Loading vocabulary from: {vocab_file}")
+    with open(vocab_file) as f:
         data: dict[str, Any] = json.load(f)
         return data
 
@@ -138,16 +151,17 @@ async def verify_seed(session: AsyncSession) -> None:
         logger.info(f"  {domain}: {len(names)} concepts")
 
 
-async def seed_vocabulary(clear_existing: bool = True) -> None:
+async def seed_vocabulary(clear_existing: bool = True, expanded: bool = False) -> None:
     """Main function to seed vocabulary data.
 
     Args:
         clear_existing: If True, clear existing vocabulary data before seeding.
+        expanded: If True, load the expanded vocabulary (~246 concepts).
     """
-    logger.info("Starting vocabulary seed...")
+    logger.info(f"Starting vocabulary seed ({'expanded' if expanded else 'basic'})...")
 
     # Load fixture data
-    vocabulary_data = await load_vocabulary_fixture()
+    vocabulary_data = await load_vocabulary_fixture(expanded=expanded)
     concepts_data = vocabulary_data.get("concepts", [])
 
     if not concepts_data:
@@ -172,8 +186,26 @@ async def seed_vocabulary(clear_existing: bool = True) -> None:
 
 async def main() -> None:
     """Entry point for running seed script."""
+    parser = argparse.ArgumentParser(
+        description="Seed OMOP vocabulary into database"
+    )
+    parser.add_argument(
+        "--expanded",
+        action="store_true",
+        help="Load expanded vocabulary (~246 concepts) instead of basic (~34 concepts)",
+    )
+    parser.add_argument(
+        "--no-clear",
+        action="store_true",
+        help="Don't clear existing vocabulary data before seeding",
+    )
+    args = parser.parse_args()
+
     try:
-        await seed_vocabulary()
+        await seed_vocabulary(
+            clear_existing=not args.no_clear,
+            expanded=args.expanded,
+        )
     finally:
         await engine.dispose()
 

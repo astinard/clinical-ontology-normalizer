@@ -9,6 +9,7 @@ Models:
 - Mention, MentionConceptCandidate (task 2.4)
 - ClinicalFact, FactEvidence (task 2.5)
 - KGNode, KGEdge (task 2.6)
+- Concept, ConceptSynonym (task 2.7)
 """
 
 from app.core.database import Base
@@ -16,6 +17,7 @@ from app.models.clinical_fact import ClinicalFact, FactEvidence
 from app.models.document import Document, StructuredResource
 from app.models.knowledge_graph import KGEdge, KGNode
 from app.models.mention import Mention, MentionConceptCandidate
+from app.models.vocabulary import Concept, ConceptSynonym
 
 __all__ = [
     "Base",
@@ -27,4 +29,6 @@ __all__ = [
     "FactEvidence",
     "KGNode",
     "KGEdge",
+    "Concept",
+    "ConceptSynonym",
 ]

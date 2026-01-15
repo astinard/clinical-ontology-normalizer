@@ -25,7 +25,7 @@ Each task should be completed in one iteration with tests passing before checkin
 - [x] 2.4 Create Mention and MentionConceptCandidate tables with migrations
 - [x] 2.5 Create ClinicalFact and FactEvidence tables with migrations
 - [x] 2.6 Create KGNode and KGEdge tables with migrations
-- [ ] 2.7 Create seed script for local vocabulary fixture (OMOP concept subset)
+- [x] 2.7 Create seed script for local vocabulary fixture (OMOP concept subset)
 
 ## Phase 3: Ingestion API
 

@@ -75,14 +75,14 @@ Each task should be completed in one iteration with tests passing before checkin
 
 ## Phase 8: Web UI (Next.js)
 
-- [ ] 8.1 Initialize Next.js project with TypeScript
-- [ ] 8.2 Set up Tailwind CSS and component library
-- [ ] 8.3 Create document upload page
-- [ ] 8.4 Create job status/progress page
-- [ ] 8.5 Create document viewer with mention highlights
-- [ ] 8.6 Create clinical facts list view
-- [ ] 8.7 Create knowledge graph visualization (simple node/edge view)
-- [ ] 8.8 Add frontend linting and typecheck to Makefile
+- [x] 8.1 Initialize Next.js project with TypeScript
+- [x] 8.2 Set up Tailwind CSS and component library
+- [x] 8.3 Create document upload page
+- [x] 8.4 Create job status/progress page
+- [x] 8.5 Create document viewer with mention highlights
+- [x] 8.6 Create clinical facts list view
+- [x] 8.7 Create knowledge graph visualization (simple node/edge view)
+- [x] 8.8 Add frontend linting and typecheck to Makefile
 
 ## Phase 9: OMOP Export
 

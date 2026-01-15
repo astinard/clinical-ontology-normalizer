@@ -39,10 +39,10 @@ Each task should be completed in one iteration with tests passing before checkin
 ## Phase 4: NLP Pipeline (Mention Extraction)
 
 - [x] 4.1 Create NLP service interface with extract_mentions method
-- [ ] 4.2 Implement rule-based mention extractor (regex for common patterns)
-- [ ] 4.3 Implement negation detection (NegEx-style rules)
-- [ ] 4.4 Implement temporality detection (past/current/future)
-- [ ] 4.5 Implement experiencer detection (patient/family/other)
+- [x] 4.2 Implement rule-based mention extractor (regex for common patterns)
+- [x] 4.3 Implement negation detection (NegEx-style rules)
+- [x] 4.4 Implement temporality detection (past/current/future)
+- [x] 4.5 Implement experiencer detection (patient/family/other)
 - [ ] 4.6 Create job worker that processes documents and creates Mentions
 - [ ] 4.7 Add tests with synthetic notes validating assertion/temporality/experiencer
 

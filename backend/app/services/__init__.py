@@ -9,11 +9,13 @@ Services implement business logic and data processing:
 """
 
 from app.services.nlp import BaseNLPService, ExtractedMention, NLPServiceInterface
+from app.services.nlp_rule_based import RuleBasedNLPService
 from app.services.vocabulary import VocabularyService
 
 __all__ = [
     "BaseNLPService",
     "ExtractedMention",
     "NLPServiceInterface",
+    "RuleBasedNLPService",
     "VocabularyService",
 ]

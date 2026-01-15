@@ -64,7 +64,7 @@
       "domain_id": "Condition",
       "concept_class_id": "Clinical Finding",
       "standard_concept": "S",
-      "synonyms": ["type 2 diabetes mellitus", "type 2 diabetes", "T2DM", "diabetes mellitus type 2"]
+      "synonyms": ["type 2 diabetes mellitus", "type 2 diabetes", "T2DM", "diabetes mellitus type 2", "diabetes"]
     },
     {
       "concept_id": 320128,

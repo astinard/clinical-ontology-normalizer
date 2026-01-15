@@ -48,7 +48,7 @@ def upgrade() -> None:
         sa.Column(
             "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
         ),
-        sa.Column("patient_id", sa.String(255), nullable=False, index=True),
+        sa.Column("patient_id", sa.String(255), nullable=False),
         sa.Column("note_type", sa.String(100), nullable=False),
         sa.Column("text", sa.Text(), nullable=False),
         sa.Column("metadata", postgresql.JSONB(), nullable=False, server_default="{}"),
@@ -70,7 +70,7 @@ def upgrade() -> None:
         sa.Column(
             "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
         ),
-        sa.Column("patient_id", sa.String(255), nullable=False, index=True),
+        sa.Column("patient_id", sa.String(255), nullable=False),
         sa.Column("resource_type", resource_type_enum, nullable=False),
         sa.Column("payload", postgresql.JSONB(), nullable=False),
         sa.Column("metadata", postgresql.JSONB(), nullable=False, server_default="{}"),

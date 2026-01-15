@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_sync_engine
 from app.models import Document
 from app.models.mention import Mention, MentionConceptCandidate
-from app.schemas.base import JobStatus
+from app.schemas.base import Assertion, Domain, Experiencer, JobStatus, Temporality
+from app.services.fact_builder_db import DatabaseFactBuilderService
 from app.services.mapping_db import DatabaseMappingService
 from app.services.nlp_rule_based import RuleBasedNLPService
 
@@ -41,6 +42,57 @@ def get_mapping_service(session: Session) -> DatabaseMappingService:
     if not _mapping_service.is_loaded():
         _mapping_service.load_from_db(session)
     return _mapping_service
+
+
+# Domain ID mapping from OMOP vocabulary to our Domain enum
+DOMAIN_ID_MAP: dict[str, Domain] = {
+    "condition": Domain.CONDITION,
+    "drug": Domain.DRUG,
+    "measurement": Domain.MEASUREMENT,
+    "procedure": Domain.PROCEDURE,
+    "observation": Domain.OBSERVATION,
+    "device": Domain.DEVICE,
+    "visit": Domain.VISIT,
+}
+
+
+def map_domain_id(domain_id: str | None) -> Domain:
+    """Map an OMOP domain_id string to our Domain enum.
+
+    Args:
+        domain_id: The domain_id from OMOP vocabulary (e.g., "Condition", "Drug").
+
+    Returns:
+        The matching Domain enum, defaulting to OBSERVATION for unknown domains.
+    """
+    if domain_id is None:
+        return Domain.OBSERVATION
+    normalized = domain_id.lower()
+    return DOMAIN_ID_MAP.get(normalized, Domain.OBSERVATION)
+
+
+def map_assertion(assertion_str: str) -> Assertion:
+    """Map assertion string to Assertion enum."""
+    try:
+        return Assertion(assertion_str)
+    except ValueError:
+        return Assertion.PRESENT
+
+
+def map_temporality(temporality_str: str) -> Temporality:
+    """Map temporality string to Temporality enum."""
+    try:
+        return Temporality(temporality_str)
+    except ValueError:
+        return Temporality.CURRENT
+
+
+def map_experiencer(experiencer_str: str) -> Experiencer:
+    """Map experiencer string to Experiencer enum."""
+    try:
+        return Experiencer(experiencer_str)
+    except ValueError:
+        return Experiencer.PATIENT
 
 
 def process_document(document_id: str) -> dict:
@@ -145,8 +197,40 @@ def process_document(document_id: str) -> dict:
                 f"Created {candidate_count} concept candidates for {len(mention_records)} mentions"
             )
 
-            # TODO: Phase 6 - Create ClinicalFacts
-            # fact_builder.create_facts(document.id, mention_records)
+            # Phase 6: Create ClinicalFacts from mentions with mapped concepts
+            fact_builder = DatabaseFactBuilderService(session)
+            fact_count = 0
+
+            for mention in mention_records:
+                # Get the top-ranked concept candidate for this mention
+                stmt = (
+                    select(MentionConceptCandidate)
+                    .where(MentionConceptCandidate.mention_id == mention.id)
+                    .order_by(MentionConceptCandidate.rank.asc())
+                    .limit(1)
+                )
+                result = session.execute(stmt)
+                top_candidate = result.scalar_one_or_none()
+
+                if top_candidate is None:
+                    # No concept mapping found, skip this mention
+                    continue
+
+                # Create ClinicalFact from the mention
+                fact_builder.create_fact_from_mention(
+                    mention_id=UUID(mention.id),
+                    patient_id=document.patient_id,
+                    omop_concept_id=top_candidate.omop_concept_id,
+                    concept_name=top_candidate.concept_name,
+                    domain=map_domain_id(top_candidate.domain_id),
+                    assertion=map_assertion(mention.assertion),
+                    temporality=map_temporality(mention.temporality),
+                    experiencer=map_experiencer(mention.experiencer),
+                    confidence=mention.confidence,
+                )
+                fact_count += 1
+
+            logger.info(f"Created {fact_count} clinical facts from mentions")
 
             # Update status to COMPLETED
             session.execute(
@@ -171,6 +255,7 @@ def process_document(document_id: str) -> dict:
                 "patient_id": document.patient_id,
                 "mention_count": len(mention_records),
                 "candidate_count": candidate_count,
+                "fact_count": fact_count,
             }
 
     except Exception as e:

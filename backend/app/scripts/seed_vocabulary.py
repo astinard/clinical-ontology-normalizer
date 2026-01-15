@@ -24,7 +24,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Path to vocabulary fixture
-FIXTURES_DIR = Path(__file__).parent.parent.parent.parent / "fixtures"
+# In Docker container, fixtures are at /app/fixtures/
+# In local development, they're at backend/../fixtures/
+_SCRIPT_DIR = Path(__file__).parent
+_BACKEND_DIR = _SCRIPT_DIR.parent.parent  # app/scripts -> app -> backend root
+FIXTURES_DIR = _BACKEND_DIR / "fixtures"
+# Fallback to project root fixtures if not in backend
+if not FIXTURES_DIR.exists():
+    FIXTURES_DIR = _BACKEND_DIR.parent / "fixtures"
 VOCABULARY_FILE = FIXTURES_DIR / "omop_vocabulary.json"
 
 

@@ -1,0 +1,155 @@
+"""SQLAlchemy models for ClinicalFact and FactEvidence."""
+
+from datetime import datetime
+
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+from app.schemas.base import Assertion, Domain, Experiencer, Temporality
+from app.schemas.clinical_fact import EvidenceType
+
+
+class ClinicalFact(Base):
+    """Canonical normalized clinical fact.
+
+    Represents a deduplicated, normalized clinical finding combining
+    evidence from both NLP extraction and structured data sources.
+
+    CRITICAL: Negated findings (assertion=ABSENT) MUST be preserved.
+    They should NOT be inserted into positive OMOP event tables but
+    should be:
+    1. Stored in this table with assertion=ABSENT
+    2. Exported to NOTE_NLP with term_exists='N'
+    3. Represented in the knowledge graph with appropriate markers
+    """
+
+    __tablename__ = "clinical_facts"
+
+    patient_id: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        index=True,
+    )
+    domain: Mapped[Domain] = mapped_column(
+        Enum(Domain, name="domain_type", create_constraint=True, create_type=False),
+        nullable=False,
+        index=True,
+    )
+    omop_concept_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True,
+    )
+    concept_name: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    assertion: Mapped[Assertion] = mapped_column(
+        Enum(Assertion, name="assertion_type", create_constraint=True, create_type=False),
+        nullable=False,
+        default=Assertion.PRESENT,
+        index=True,
+    )
+    temporality: Mapped[Temporality] = mapped_column(
+        Enum(Temporality, name="temporality_type", create_constraint=True, create_type=False),
+        nullable=False,
+        default=Temporality.CURRENT,
+    )
+    experiencer: Mapped[Experiencer] = mapped_column(
+        Enum(Experiencer, name="experiencer_type", create_constraint=True, create_type=False),
+        nullable=False,
+        default=Experiencer.PATIENT,
+    )
+    confidence: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=1.0,
+    )
+    value: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    unit: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+    start_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    end_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    # Relationships
+    evidence = relationship(
+        "FactEvidence",
+        back_populates="fact",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<ClinicalFact(id={self.id}, patient={self.patient_id}, concept={self.concept_name}, assertion={self.assertion})>"
+
+    @property
+    def is_negated(self) -> bool:
+        """Check if this fact represents a negated finding."""
+        return self.assertion == Assertion.ABSENT
+
+    @property
+    def is_uncertain(self) -> bool:
+        """Check if this fact represents an uncertain finding."""
+        return self.assertion == Assertion.POSSIBLE
+
+    @property
+    def is_family_history(self) -> bool:
+        """Check if this fact is about a family member."""
+        return self.experiencer == Experiencer.FAMILY
+
+
+class FactEvidence(Base):
+    """Evidence linking a ClinicalFact to its source.
+
+    Enables full provenance tracking by linking facts to their
+    evidence sources (mentions from NLP, structured data records,
+    or inferred relationships).
+    """
+
+    __tablename__ = "fact_evidence"
+
+    fact_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("clinical_facts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    evidence_type: Mapped[EvidenceType] = mapped_column(
+        Enum(EvidenceType, name="evidence_type", create_constraint=True),
+        nullable=False,
+    )
+    source_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        nullable=False,
+    )
+    source_table: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+    weight: Mapped[float] = mapped_column(
+        Float,
+        nullable=False,
+        default=1.0,
+    )
+    notes: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    # Relationships
+    fact = relationship("ClinicalFact", back_populates="evidence")
+
+    def __repr__(self) -> str:
+        return f"<FactEvidence(fact_id={self.fact_id}, type={self.evidence_type}, source={self.source_table})>"

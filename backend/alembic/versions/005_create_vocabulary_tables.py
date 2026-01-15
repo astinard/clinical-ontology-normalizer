@@ -38,12 +38,17 @@ def upgrade() -> None:
     op.create_index("ix_concepts_domain_id", "concepts", ["domain_id"])
     op.create_index("ix_concepts_vocabulary_id", "concepts", ["vocabulary_id"])
 
-    # Create concept_synonyms table
+    # Create concept_synonyms table with foreign key to concepts
     op.create_table(
         "concept_synonyms",
         sa.Column("id", postgresql.UUID(as_uuid=False), primary_key=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("concept_id", sa.Integer(), nullable=False),
+        sa.Column(
+            "concept_id",
+            sa.Integer(),
+            sa.ForeignKey("concepts.concept_id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("concept_synonym_name", sa.String(1000), nullable=False),
         sa.Column("language_concept_id", sa.Integer(), nullable=False, server_default="4180186"),
     )

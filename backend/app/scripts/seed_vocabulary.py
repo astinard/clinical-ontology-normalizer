@@ -1,0 +1,177 @@
+"""Seed script for loading OMOP vocabulary fixture into database.
+
+Usage:
+    python -m app.scripts.seed_vocabulary
+
+This script loads the OMOP concept vocabulary subset from fixtures/omop_vocabulary.json
+into the database for local development and testing.
+"""
+
+import asyncio
+import json
+import logging
+from pathlib import Path
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import async_session_maker, engine
+from app.models import Concept, ConceptSynonym
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Path to vocabulary fixture
+FIXTURES_DIR = Path(__file__).parent.parent.parent.parent / "fixtures"
+VOCABULARY_FILE = FIXTURES_DIR / "omop_vocabulary.json"
+
+
+async def load_vocabulary_fixture() -> dict:
+    """Load vocabulary data from JSON fixture file."""
+    if not VOCABULARY_FILE.exists():
+        raise FileNotFoundError(f"Vocabulary fixture not found: {VOCABULARY_FILE}")
+
+    with open(VOCABULARY_FILE) as f:
+        return json.load(f)
+
+
+async def clear_vocabulary(session: AsyncSession) -> None:
+    """Clear existing vocabulary data."""
+    # Delete synonyms first (foreign key constraint)
+    await session.execute(
+        ConceptSynonym.__table__.delete()
+    )
+    # Then delete concepts
+    await session.execute(
+        Concept.__table__.delete()
+    )
+    await session.commit()
+    logger.info("Cleared existing vocabulary data")
+
+
+async def seed_concepts(session: AsyncSession, concepts_data: list[dict]) -> dict[int, Concept]:
+    """Seed concepts into database.
+
+    Returns:
+        Mapping of concept_id to Concept objects for synonym linking.
+    """
+    concept_map: dict[int, Concept] = {}
+
+    for concept_data in concepts_data:
+        concept = Concept(
+            concept_id=concept_data["concept_id"],
+            concept_name=concept_data["concept_name"],
+            domain_id=concept_data["domain_id"],
+            vocabulary_id=concept_data["vocabulary_id"],
+            concept_class_id=concept_data["concept_class_id"],
+            standard_concept=concept_data.get("standard_concept"),
+        )
+        session.add(concept)
+        concept_map[concept_data["concept_id"]] = concept
+
+    await session.commit()
+    logger.info(f"Seeded {len(concepts_data)} concepts")
+
+    return concept_map
+
+
+async def seed_synonyms(
+    session: AsyncSession,
+    concepts_data: list[dict],
+) -> int:
+    """Seed concept synonyms into database.
+
+    Synonyms are extracted from the 'synonyms' field of each concept.
+
+    Returns:
+        Total number of synonyms seeded.
+    """
+    synonym_count = 0
+
+    for concept_data in concepts_data:
+        concept_id = concept_data["concept_id"]
+        synonyms = concept_data.get("synonyms", [])
+
+        for synonym_name in synonyms:
+            synonym = ConceptSynonym(
+                concept_id=concept_id,
+                concept_synonym_name=synonym_name.lower(),  # Normalize to lowercase
+                language_concept_id=4180186,  # English
+            )
+            session.add(synonym)
+            synonym_count += 1
+
+    await session.commit()
+    logger.info(f"Seeded {synonym_count} concept synonyms")
+
+    return synonym_count
+
+
+async def verify_seed(session: AsyncSession) -> None:
+    """Verify that seeding was successful by querying the database."""
+    # Count concepts
+    result = await session.execute(select(Concept))
+    concepts = result.scalars().all()
+
+    # Count synonyms
+    result = await session.execute(select(ConceptSynonym))
+    synonyms = result.scalars().all()
+
+    logger.info(f"Verification: {len(concepts)} concepts, {len(synonyms)} synonyms in database")
+
+    # Show sample data by domain
+    domains = {}
+    for concept in concepts:
+        domain = concept.domain_id
+        if domain not in domains:
+            domains[domain] = []
+        domains[domain].append(concept.concept_name)
+
+    logger.info("Concepts by domain:")
+    for domain, names in sorted(domains.items()):
+        logger.info(f"  {domain}: {len(names)} concepts")
+
+
+async def seed_vocabulary(clear_existing: bool = True) -> None:
+    """Main function to seed vocabulary data.
+
+    Args:
+        clear_existing: If True, clear existing vocabulary data before seeding.
+    """
+    logger.info("Starting vocabulary seed...")
+
+    # Load fixture data
+    vocabulary_data = await load_vocabulary_fixture()
+    concepts_data = vocabulary_data.get("concepts", [])
+
+    if not concepts_data:
+        logger.warning("No concepts found in vocabulary fixture")
+        return
+
+    async with async_session_maker() as session:
+        if clear_existing:
+            await clear_vocabulary(session)
+
+        # Seed concepts
+        await seed_concepts(session, concepts_data)
+
+        # Seed synonyms
+        await seed_synonyms(session, concepts_data)
+
+        # Verify
+        await verify_seed(session)
+
+    logger.info("Vocabulary seed completed successfully!")
+
+
+async def main() -> None:
+    """Entry point for running seed script."""
+    try:
+        await seed_vocabulary()
+    finally:
+        await engine.dispose()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

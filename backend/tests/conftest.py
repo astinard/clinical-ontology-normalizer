@@ -1,7 +1,7 @@
 """Pytest configuration and fixtures for backend tests."""
 
 from collections.abc import AsyncGenerator
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -26,12 +26,24 @@ def mock_db_session() -> MagicMock:
 
 
 @pytest.fixture
+def mock_enqueue_job() -> MagicMock:
+    """Create a mock enqueue_job function.
+
+    Returns a mock that can be used to verify job enqueueing.
+    """
+    mock_job = MagicMock()
+    mock_job.id = "mock-job-id"
+    return MagicMock(return_value=mock_job)
+
+
+@pytest.fixture
 async def client_with_mock_db(
     mock_db_session: MagicMock,
+    mock_enqueue_job: MagicMock,
 ) -> AsyncGenerator[AsyncClient, None]:
-    """Create async test client with mocked database.
+    """Create async test client with mocked database and queue.
 
-    This allows testing API endpoints without a real database connection.
+    This allows testing API endpoints without a real database or Redis connection.
     """
 
     async def override_get_db():
@@ -39,11 +51,12 @@ async def client_with_mock_db(
 
     app.dependency_overrides[get_db] = override_get_db
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as ac:
-        yield ac
+    with patch("app.api.documents.enqueue_job", mock_enqueue_job):
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+        ) as ac:
+            yield ac
 
     # Clean up overrides
     app.dependency_overrides.clear()

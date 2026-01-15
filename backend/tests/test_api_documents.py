@@ -1,11 +1,13 @@
 """Tests for document API endpoints."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 
+from app.core.database import get_db
+from app.main import app
 from app.schemas import JobStatus
 
 

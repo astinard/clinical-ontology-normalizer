@@ -4,19 +4,38 @@ from collections.abc import AsyncGenerator
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, create_engine, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from app.core.config import settings
 
-# Create async engine
+# Create async engine (for FastAPI async endpoints)
 engine = create_async_engine(
     settings.database_url,
     echo=settings.debug,
     future=True,
 )
+
+# Lazy initialized sync engine (for RQ workers and background jobs)
+_sync_engine = None
+
+
+def get_sync_engine():
+    """Get or create sync engine for background jobs.
+
+    Lazily creates the sync engine on first use to avoid import errors
+    when psycopg2 is not installed (e.g., in test environments).
+    """
+    global _sync_engine
+    if _sync_engine is None:
+        _sync_engine = create_engine(
+            settings.sync_database_url,
+            echo=settings.debug,
+            future=True,
+        )
+    return _sync_engine
 
 # Create async session factory
 async_session_maker = async_sessionmaker(

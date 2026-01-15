@@ -1,9 +1,10 @@
 """SQLAlchemy models for Document and StructuredResource."""
 
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import DateTime, Enum, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -42,6 +43,11 @@ class Document(Base):
         Enum(JobStatus, name="job_status", create_constraint=True),
         nullable=False,
         default=JobStatus.QUEUED,
+        index=True,
+    )
+    job_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        nullable=True,
         index=True,
     )
     processed_at: Mapped[datetime | None] = mapped_column(
@@ -85,6 +91,11 @@ class StructuredResource(Base):
         Enum(JobStatus, name="job_status", create_constraint=True),
         nullable=False,
         default=JobStatus.QUEUED,
+        index=True,
+    )
+    job_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        nullable=True,
         index=True,
     )
     processed_at: Mapped[datetime | None] = mapped_column(

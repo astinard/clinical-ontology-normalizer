@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import documents_router
 from app.core.config import settings
 from app.core.database import close_db, init_db
+from app.core.queue import clear_queues
+from app.core.redis import close_redis
 
 
 @asynccontextmanager
@@ -19,13 +21,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     Handles startup and shutdown events:
     - Startup: Initialize database connection
-    - Shutdown: Close database connections
+    - Shutdown: Close database and Redis connections, clear queues
     """
     # Startup
     if settings.debug:
         await init_db()
     yield
     # Shutdown
+    clear_queues()
+    close_redis()
     await close_db()
 
 

@@ -27,6 +27,7 @@ class Document(BaseModel):
     text: str = Field(..., description="Raw clinical note text")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     status: JobStatus = Field(default=JobStatus.QUEUED, description="Processing status")
+    job_id: UUID | None = Field(None, description="Processing job ID")
     created_at: datetime = Field(..., description="When the document was uploaded")
     processed_at: datetime | None = Field(None, description="When processing completed")
 

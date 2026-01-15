@@ -1,6 +1,7 @@
 """Tests for document API endpoints."""
 
-from unittest.mock import MagicMock, patch
+from datetime import UTC
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -453,3 +454,153 @@ class TestDocumentUploadJobEnqueue:
         app.dependency_overrides.clear()
         # Upload should still succeed
         assert response.status_code == 201
+
+
+class TestDocumentRetrieval:
+    """Test document retrieval endpoint."""
+
+    @pytest.mark.asyncio
+    async def test_get_document_returns_200(
+        self,
+        mock_db_session: MagicMock,
+        mock_enqueue_job: MagicMock,
+    ) -> None:
+        """Test that GET /documents/{doc_id} returns 200 for existing document."""
+        from datetime import datetime
+
+        doc_id = str(uuid4())
+        job_id = uuid4()
+
+        # Create a mock document object
+        mock_doc = MagicMock()
+        mock_doc.id = doc_id
+        mock_doc.patient_id = "patient-123"
+        mock_doc.note_type = "progress_note"
+        mock_doc.text = "Test clinical note."
+        mock_doc.extra_metadata = {"encounter_date": "2026-01-14"}
+        mock_doc.status = JobStatus.QUEUED
+        mock_doc.job_id = job_id
+        mock_doc.created_at = datetime.now(UTC)
+        mock_doc.processed_at = None
+
+        # Mock the execute method to return a result with our mock document
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_doc
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue_job):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                response = await ac.get(f"/documents/{doc_id}")
+
+        app.dependency_overrides.clear()
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_get_document_returns_document_data(
+        self,
+        mock_db_session: MagicMock,
+        mock_enqueue_job: MagicMock,
+    ) -> None:
+        """Test that GET /documents/{doc_id} returns correct document data."""
+        from datetime import datetime
+
+        doc_id = str(uuid4())
+        job_id = uuid4()
+
+        mock_doc = MagicMock()
+        mock_doc.id = doc_id
+        mock_doc.patient_id = "patient-456"
+        mock_doc.note_type = "discharge_summary"
+        mock_doc.text = "Patient discharged in good condition."
+        mock_doc.extra_metadata = {"admission_date": "2026-01-10"}
+        mock_doc.status = JobStatus.COMPLETED
+        mock_doc.job_id = job_id
+        mock_doc.created_at = datetime.now(UTC)
+        mock_doc.processed_at = datetime.now(UTC)
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_doc
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue_job):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                response = await ac.get(f"/documents/{doc_id}")
+
+        app.dependency_overrides.clear()
+        data = response.json()
+        assert data["id"] == doc_id
+        assert data["patient_id"] == "patient-456"
+        assert data["note_type"] == "discharge_summary"
+        assert data["text"] == "Patient discharged in good condition."
+        assert data["metadata"]["admission_date"] == "2026-01-10"
+        assert data["status"] == "completed"
+        assert data["job_id"] == str(job_id)
+
+    @pytest.mark.asyncio
+    async def test_get_document_returns_404_when_not_found(
+        self,
+        mock_db_session: MagicMock,
+        mock_enqueue_job: MagicMock,
+    ) -> None:
+        """Test that GET /documents/{doc_id} returns 404 for non-existent document."""
+        doc_id = str(uuid4())
+
+        # Mock execute to return None (document not found)
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_db_session.execute = AsyncMock(return_value=mock_result)
+
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue_job):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                response = await ac.get(f"/documents/{doc_id}")
+
+        app.dependency_overrides.clear()
+        assert response.status_code == 404
+        data = response.json()
+        assert "not found" in data["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_get_document_invalid_uuid_returns_422(
+        self,
+        mock_db_session: MagicMock,
+        mock_enqueue_job: MagicMock,
+    ) -> None:
+        """Test that GET /documents/{doc_id} returns 422 for invalid UUID."""
+        async def override_get_db():
+            yield mock_db_session
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        with patch("app.api.documents.enqueue_job", mock_enqueue_job):
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as ac:
+                response = await ac.get("/documents/not-a-valid-uuid")
+
+        app.dependency_overrides.clear()
+        assert response.status_code == 422

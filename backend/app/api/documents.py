@@ -4,7 +4,8 @@ import logging
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -12,7 +13,7 @@ from app.core.queue import QUEUE_NAMES, enqueue_job
 from app.jobs import process_document
 from app.models import Document as DocumentModel
 from app.schemas import DocumentCreate, JobStatus
-from app.schemas.document import DocumentUploadResponse
+from app.schemas.document import Document, DocumentUploadResponse
 
 logger = logging.getLogger(__name__)
 
@@ -80,4 +81,49 @@ async def upload_document(
         document_id=UUID(db_document.id),
         job_id=job_id,
         status=JobStatus.QUEUED,
+    )
+
+
+@router.get(
+    "/{doc_id}",
+    response_model=Document,
+    summary="Get a clinical document",
+    description="Retrieve a clinical document by its ID.",
+)
+async def get_document(
+    doc_id: UUID,
+    db: DbSession,
+) -> Document:
+    """Retrieve a clinical document by ID.
+
+    Args:
+        doc_id: The UUID of the document to retrieve.
+        db: Database session.
+
+    Returns:
+        Document with all fields including processing status.
+
+    Raises:
+        HTTPException: 404 if document not found.
+    """
+    stmt = select(DocumentModel).where(DocumentModel.id == str(doc_id))
+    result = await db.execute(stmt)
+    document = result.scalar_one_or_none()
+
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document with ID {doc_id} not found",
+        )
+
+    return Document(
+        id=UUID(document.id),
+        patient_id=document.patient_id,
+        note_type=document.note_type,
+        text=document.text,
+        metadata=document.extra_metadata,
+        status=document.status,
+        job_id=document.job_id,
+        created_at=document.created_at,
+        processed_at=document.processed_at,
     )

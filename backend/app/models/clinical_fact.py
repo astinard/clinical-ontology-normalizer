@@ -97,17 +97,17 @@ class ClinicalFact(Base):
     @property
     def is_negated(self) -> bool:
         """Check if this fact represents a negated finding."""
-        return self.assertion == Assertion.ABSENT
+        return bool(self.assertion == Assertion.ABSENT)
 
     @property
     def is_uncertain(self) -> bool:
         """Check if this fact represents an uncertain finding."""
-        return self.assertion == Assertion.POSSIBLE
+        return bool(self.assertion == Assertion.POSSIBLE)
 
     @property
     def is_family_history(self) -> bool:
         """Check if this fact is about a family member."""
-        return self.experiencer == Experiencer.FAMILY
+        return bool(self.experiencer == Experiencer.FAMILY)
 
 
 class FactEvidence(Base):

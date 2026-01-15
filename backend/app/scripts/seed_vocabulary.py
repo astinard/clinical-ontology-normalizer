@@ -11,6 +11,7 @@ import asyncio
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,13 +28,14 @@ FIXTURES_DIR = Path(__file__).parent.parent.parent.parent / "fixtures"
 VOCABULARY_FILE = FIXTURES_DIR / "omop_vocabulary.json"
 
 
-async def load_vocabulary_fixture() -> dict:
+async def load_vocabulary_fixture() -> dict[str, Any]:
     """Load vocabulary data from JSON fixture file."""
     if not VOCABULARY_FILE.exists():
         raise FileNotFoundError(f"Vocabulary fixture not found: {VOCABULARY_FILE}")
 
     with open(VOCABULARY_FILE) as f:
-        return json.load(f)
+        data: dict[str, Any] = json.load(f)
+        return data
 
 
 async def clear_vocabulary(session: AsyncSession) -> None:
@@ -121,7 +123,7 @@ async def verify_seed(session: AsyncSession) -> None:
     logger.info(f"Verification: {len(concepts)} concepts, {len(synonyms)} synonyms in database")
 
     # Show sample data by domain
-    domains = {}
+    domains: dict[str, list[str]] = {}
     for concept in concepts:
         domain = concept.domain_id
         if domain not in domains:

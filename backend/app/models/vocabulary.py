@@ -61,7 +61,7 @@ class Concept(Base):
     @property
     def is_standard(self) -> bool:
         """Check if this is a standard concept."""
-        return self.standard_concept == "S"
+        return bool(self.standard_concept == "S")
 
 
 class ConceptSynonym(Base):

@@ -19,7 +19,7 @@ test: test-backend test-frontend
 
 test-backend:
 	@echo "Running backend tests..."
-	@cd backend && python -m pytest tests/ -v || echo "Backend tests not yet configured"
+	@cd backend && python3 -m pytest tests/ -v || echo "Backend tests not yet configured"
 
 test-frontend:
 	@echo "Running frontend tests..."
@@ -34,7 +34,7 @@ lint: lint-backend lint-frontend
 
 lint-backend:
 	@echo "Running backend linting..."
-	@cd backend && python -m ruff check . || echo "Backend linting not yet configured"
+	@cd backend && python3 -m ruff check . || echo "Backend linting not yet configured"
 
 lint-frontend:
 	@echo "Running frontend linting..."
@@ -49,7 +49,7 @@ typecheck: typecheck-backend typecheck-frontend
 
 typecheck-backend:
 	@echo "Running backend type checking..."
-	@cd backend && python -m mypy app/ || echo "Backend type checking not yet configured"
+	@cd backend && python3 -m mypy app/ || echo "Backend type checking not yet configured"
 
 typecheck-frontend:
 	@echo "Running frontend type checking..."

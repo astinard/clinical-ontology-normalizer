@@ -30,7 +30,7 @@ Each task should be completed in one iteration with tests passing before checkin
 ## Phase 3: Ingestion API
 
 - [x] 3.1 Set up FastAPI app with health endpoint
-- [ ] 3.2 Create document upload endpoint (POST /documents)
+- [x] 3.2 Create document upload endpoint (POST /documents)
 - [ ] 3.3 Add Redis connection and RQ job queue setup
 - [ ] 3.4 Create job enqueue logic on document upload
 - [ ] 3.5 Add job status endpoint (GET /jobs/{job_id})

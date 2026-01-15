@@ -16,6 +16,7 @@ from app.schemas.clinical_fact import (
 from app.schemas.document import (
     Document,
     DocumentCreate,
+    DocumentUploadResponse,
     StructuredResource,
     StructuredResourceCreate,
 )
@@ -43,6 +44,7 @@ __all__ = [
     # Document
     "Document",
     "DocumentCreate",
+    "DocumentUploadResponse",
     "StructuredResource",
     "StructuredResourceCreate",
     # Mention

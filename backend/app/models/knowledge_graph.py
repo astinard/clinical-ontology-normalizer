@@ -68,7 +68,7 @@ class KGNode(Base):
     @property
     def is_patient_node(self) -> bool:
         """Check if this is a patient node."""
-        return self.node_type == NodeType.PATIENT
+        return bool(self.node_type == NodeType.PATIENT)
 
 
 class KGEdge(Base):

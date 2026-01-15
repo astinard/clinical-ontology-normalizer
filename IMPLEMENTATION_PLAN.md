@@ -94,11 +94,11 @@ Each task should be completed in one iteration with tests passing before checkin
 
 ## Phase 10: Hardening
 
-- [ ] 10.1 Add basic authentication middleware
-- [ ] 10.2 Add tenant/patient isolation
-- [ ] 10.3 Add audit logging for data access
-- [ ] 10.4 Add privacy safeguards (no real PHI checks)
-- [ ] 10.5 Final integration test across full pipeline
+- [x] 10.1 Add basic authentication middleware
+- [x] 10.2 Add tenant/patient isolation
+- [x] 10.3 Add audit logging for data access
+- [x] 10.4 Add privacy safeguards (no real PHI checks)
+- [x] 10.5 Final integration test across full pipeline
 
 ---
 

@@ -31,5 +31,10 @@ class Settings(BaseSettings):
     # API
     api_v1_prefix: str = "/api/v1"
 
+    # Authentication
+    api_key: str = "dev-api-key-change-in-production"
+    api_key_header: str = "X-API-Key"
+    auth_enabled: bool = False  # Disabled by default for local dev
+
 
 settings = Settings()

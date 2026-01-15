@@ -86,11 +86,11 @@ Each task should be completed in one iteration with tests passing before checkin
 
 ## Phase 9: OMOP Export
 
-- [ ] 9.1 Create export service interface
-- [ ] 9.2 Implement NOTE table export (document metadata)
-- [ ] 9.3 Implement NOTE_NLP export (mentions with assertion info)
-- [ ] 9.4 Create export endpoint (GET /export/omop)
-- [ ] 9.5 Add tests validating export format
+- [x] 9.1 Create export service interface
+- [x] 9.2 Implement NOTE table export (document metadata)
+- [x] 9.3 Implement NOTE_NLP export (mentions with assertion info)
+- [x] 9.4 Create export endpoint (GET /export/omop)
+- [x] 9.5 Add tests validating export format
 
 ## Phase 10: Hardening
 

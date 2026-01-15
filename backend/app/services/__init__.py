@@ -6,8 +6,16 @@ Services implement business logic and data processing:
 - MappingService: OMOP concept mapping (task 5.x)
 - FactBuilderService: ClinicalFact construction (task 6.x)
 - GraphBuilderService: Knowledge graph materialization (task 7.x)
+- OMOPExporter: Export to OMOP CDM format (task 9.x)
 """
 
+from app.services.export import (
+    BaseOMOPExporter,
+    DatabaseOMOPExporter,
+    NoteExport,
+    NoteNLPExport,
+    OMOPExportResult,
+)
 from app.services.fact_builder import (
     BaseFactBuilderService,
     EvidenceInput,
@@ -58,4 +66,9 @@ __all__ = [
     "NLPServiceInterface",
     "RuleBasedNLPService",
     "VocabularyService",
+    "BaseOMOPExporter",
+    "DatabaseOMOPExporter",
+    "NoteExport",
+    "NoteNLPExport",
+    "OMOPExportResult",
 ]

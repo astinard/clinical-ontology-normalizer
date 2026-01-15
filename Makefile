@@ -97,9 +97,9 @@ docker-up:
 	docker compose up -d
 	@echo ""
 	@echo "Services started:"
-	@echo "  - Frontend: http://localhost:3000"
-	@echo "  - Backend API: http://localhost:8000"
-	@echo "  - API Docs: http://localhost:8000/docs"
+	@echo "  - Frontend: http://localhost:3001"
+	@echo "  - Backend API: http://localhost:8080"
+	@echo "  - API Docs: http://localhost:8080/docs"
 	@echo ""
 
 # Stop all services
@@ -113,9 +113,9 @@ docker-dev:
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 	@echo ""
 	@echo "Services started (dev mode with hot reload):"
-	@echo "  - Frontend: http://localhost:3000"
-	@echo "  - Backend API: http://localhost:8000"
-	@echo "  - API Docs: http://localhost:8000/docs"
+	@echo "  - Frontend: http://localhost:3001"
+	@echo "  - Backend API: http://localhost:8080"
+	@echo "  - API Docs: http://localhost:8080/docs"
 	@echo ""
 
 # View service logs

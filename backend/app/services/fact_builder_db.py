@@ -13,8 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.clinical_fact import ClinicalFact, FactEvidence
-from app.schemas.base import Assertion, Domain, Experiencer, Temporality
-from app.schemas.clinical_fact import EvidenceType
+from app.schemas.base import Assertion, Domain
 from app.services.fact_builder import (
     BaseFactBuilderService,
     EvidenceInput,

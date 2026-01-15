@@ -58,11 +58,11 @@ Each task should be completed in one iteration with tests passing before checkin
 ## Phase 6: ClinicalFact Construction
 
 - [x] 6.1 Create fact builder service interface
-- [ ] 6.2 Implement unstructured-to-fact conversion (from Mentions)
-- [ ] 6.3 Implement structured-to-fact conversion (from FHIR/CSV)
-- [ ] 6.4 Create FactEvidence links with provenance
-- [ ] 6.5 Handle negated findings correctly (assertion=absent)
-- [ ] 6.6 Add tests validating fact construction with evidence links
+- [x] 6.2 Implement unstructured-to-fact conversion (from Mentions)
+- [x] 6.3 Implement structured-to-fact conversion (from FHIR/CSV)
+- [x] 6.4 Create FactEvidence links with provenance
+- [x] 6.5 Handle negated findings correctly (assertion=absent)
+- [x] 6.6 Add tests validating fact construction with evidence links
 
 ## Phase 7: Knowledge Graph Materialization
 

@@ -15,6 +15,7 @@ from app.services.fact_builder import (
     FactInput,
     FactResult,
 )
+from app.services.fact_builder_db import DatabaseFactBuilderService
 from app.services.mapping import (
     BaseMappingService,
     ConceptCandidate,
@@ -31,6 +32,7 @@ __all__ = [
     "BaseMappingService",
     "BaseNLPService",
     "ConceptCandidate",
+    "DatabaseFactBuilderService",
     "DatabaseMappingService",
     "EvidenceInput",
     "ExtractedMention",

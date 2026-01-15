@@ -169,6 +169,28 @@ class DatabaseMappingService(BaseMappingService):
                             if len(candidates) >= limit:
                                 return candidates
 
+        # Fuzzy matching if not enough exact matches found
+        if len(candidates) < limit:
+            fuzzy_candidates: list[tuple[Concept, float]] = []
+            min_threshold = 0.3
+
+            for synonym_key, entries in self._synonym_index.items():
+                similarity = self.calculate_similarity(text, synonym_key)
+                if similarity >= min_threshold:
+                    for concept, _variant in entries:
+                        if concept.concept_id not in seen_ids:
+                            if domain is None or self._domain_from_string(
+                                concept.domain_id
+                            ) == domain:
+                                fuzzy_candidates.append((concept, similarity))
+
+            # Sort by score descending and add top candidates
+            fuzzy_candidates.sort(key=lambda x: x[1], reverse=True)
+            for concept, score in fuzzy_candidates:
+                if add_candidate(concept, score, MappingMethod.FUZZY):
+                    if len(candidates) >= limit:
+                        break
+
         return candidates
 
     def get_concept_by_id(self, concept_id: int) -> ConceptCandidate | None:

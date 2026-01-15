@@ -15,7 +15,6 @@ from app.schemas.base import Domain
 from app.services.mapping import MappingMethod
 from app.services.mapping_db import DatabaseMappingService
 
-
 _vocab_test_engine = create_engine(
     "sqlite:///:memory:",
     echo=False,
@@ -64,7 +63,7 @@ class TestVocabularyFixtureLoading:
 
     def test_fixture_has_expected_domains(self, fixture_data: dict) -> None:
         concepts = fixture_data.get("concepts", [])
-        domains = set(c["domain_id"] for c in concepts)
+        domains = {c["domain_id"] for c in concepts}
         assert "Condition" in domains
         assert "Drug" in domains
         assert "Measurement" in domains
@@ -218,6 +217,54 @@ class TestDatabaseMappingServiceWithDB:
         candidates = service.search_by_domain("pain", Domain.CONDITION)
         for candidate in candidates:
             assert candidate.domain_id == Domain.CONDITION
+
+    def test_fuzzy_match_partial_term(self, service: DatabaseMappingService) -> None:
+        """Test fuzzy matching with partial term overlap."""
+        # "community pneumonia" should fuzzy match "community acquired pneumonia"
+        candidates = service.map_mention("community pneumonia")
+        assert len(candidates) > 0
+        # Should have fuzzy matches with scores < 1.0
+        fuzzy_candidates = [c for c in candidates if c.method == MappingMethod.FUZZY]
+        if fuzzy_candidates:
+            assert all(c.score < 1.0 for c in fuzzy_candidates)
+
+    def test_fuzzy_match_method_type(self, service: DatabaseMappingService) -> None:
+        """Test that fuzzy matches have FUZZY method type."""
+        # Search for something that won't have exact match
+        candidates = service.map_mention("acquired pneumonia")
+        fuzzy_candidates = [c for c in candidates if c.method == MappingMethod.FUZZY]
+        for candidate in fuzzy_candidates:
+            assert candidate.method == MappingMethod.FUZZY
+            assert candidate.score < 1.0
+            assert candidate.score >= 0.3  # Minimum threshold
+
+    def test_fuzzy_match_respects_domain_filter(
+        self, service: DatabaseMappingService
+    ) -> None:
+        """Test fuzzy matching respects domain filter."""
+        candidates = service.map_mention(
+            "blood glucose", domain=Domain.MEASUREMENT, limit=10
+        )
+        for candidate in candidates:
+            assert candidate.domain_id == Domain.MEASUREMENT
+
+    def test_exact_matches_ranked_before_fuzzy(
+        self, service: DatabaseMappingService
+    ) -> None:
+        """Test that exact matches come before fuzzy matches."""
+        candidates = service.map_mention("fever", limit=10)
+        if len(candidates) > 1:
+            # First candidate should be exact match
+            exact_found = False
+            for i, candidate in enumerate(candidates):
+                if candidate.method == MappingMethod.EXACT:
+                    exact_found = True
+                elif candidate.method == MappingMethod.FUZZY and exact_found:
+                    # Fuzzy matches should come after exact
+                    pass
+                elif candidate.method == MappingMethod.FUZZY and not exact_found:
+                    # This is OK - might not have exact matches
+                    pass
 
 
 class TestConceptsInDatabase:

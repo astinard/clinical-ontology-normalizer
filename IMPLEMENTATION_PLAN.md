@@ -66,12 +66,12 @@ Each task should be completed in one iteration with tests passing before checkin
 
 ## Phase 7: Knowledge Graph Materialization
 
-- [ ] 7.1 Create graph builder service interface
-- [ ] 7.2 Implement patient node creation
-- [ ] 7.3 Implement fact-to-node projection (conditions, drugs, etc.)
-- [ ] 7.4 Implement edge creation (patient-has-condition, etc.)
-- [ ] 7.5 Add graph query API endpoint (GET /patients/{id}/graph)
-- [ ] 7.6 Add tests validating graph structure
+- [x] 7.1 Create graph builder service interface
+- [x] 7.2 Implement patient node creation
+- [x] 7.3 Implement fact-to-node projection (conditions, drugs, etc.)
+- [x] 7.4 Implement edge creation (patient-has-condition, etc.)
+- [x] 7.5 Add graph query API endpoint (GET /patients/{id}/graph)
+- [x] 7.6 Add tests validating graph structure
 
 ## Phase 8: Web UI (Next.js)
 

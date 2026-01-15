@@ -1,4 +1,4 @@
-.PHONY: test lint typecheck dev clean help
+.PHONY: test lint typecheck dev clean help docker-up docker-down docker-build docker-logs docker-dev docker-migrate
 
 # Default target
 help:
@@ -7,11 +7,18 @@ help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
-	@echo "  test       Run all tests (backend + frontend)"
-	@echo "  lint       Run all linters"
-	@echo "  typecheck  Run type checkers"
-	@echo "  dev        Start development servers"
-	@echo "  clean      Clean build artifacts"
+	@echo "  test          Run all tests (backend + frontend)"
+	@echo "  lint          Run all linters"
+	@echo "  typecheck     Run type checkers"
+	@echo "  dev           Start development servers (local)"
+	@echo "  clean         Clean build artifacts"
+	@echo ""
+	@echo "Docker targets:"
+	@echo "  docker-build  Build Docker images"
+	@echo "  docker-up     Start all services"
+	@echo "  docker-down   Stop all services"
+	@echo "  docker-dev    Start services with hot reload"
+	@echo "  docker-logs   View service logs"
 	@echo ""
 
 # Run all tests
@@ -74,3 +81,47 @@ clean:
 	@find . -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type d -name ".next" -exec rm -rf {} + 2>/dev/null || true
 	@echo "Done"
+
+# =============================================================================
+# Docker targets
+# =============================================================================
+
+# Build Docker images
+docker-build:
+	@echo "Building Docker images..."
+	docker compose build
+
+# Start all services (production mode)
+docker-up:
+	@echo "Starting services..."
+	docker compose up -d
+	@echo ""
+	@echo "Services started:"
+	@echo "  - Frontend: http://localhost:3000"
+	@echo "  - Backend API: http://localhost:8000"
+	@echo "  - API Docs: http://localhost:8000/docs"
+	@echo ""
+
+# Stop all services
+docker-down:
+	@echo "Stopping services..."
+	docker compose down
+
+# Start services with hot reload (development mode)
+docker-dev:
+	@echo "Starting services in development mode..."
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+	@echo ""
+	@echo "Services started (dev mode with hot reload):"
+	@echo "  - Frontend: http://localhost:3000"
+	@echo "  - Backend API: http://localhost:8000"
+	@echo "  - API Docs: http://localhost:8000/docs"
+	@echo ""
+
+# View service logs
+docker-logs:
+	docker compose logs -f
+
+# Run database migrations
+docker-migrate:
+	docker compose run --rm migrations

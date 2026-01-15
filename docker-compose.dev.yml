@@ -1,0 +1,31 @@
+# Docker Compose Development Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Backend with hot reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/app:/app/app:ro
+    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      DEBUG: "true"
+
+  # Worker with auto-restart on code changes
+  worker:
+    volumes:
+      - ./backend/app:/app/app:ro
+
+  # Frontend with hot reload (use local dev server instead of built image)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    command: ["npm", "run", "dev"]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000

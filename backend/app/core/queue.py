@@ -135,11 +135,10 @@ def clear_queues() -> None:
     Used primarily for testing cleanup.
     Safe to call even if RQ is not installed.
     """
-    global _queues
     if RQ_AVAILABLE:
         for queue in _queues.values():
             queue.empty()
-    _queues = {}
+    _queues.clear()
 
 
 # Queue names for different job types

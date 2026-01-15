@@ -34,11 +34,11 @@ Each task should be completed in one iteration with tests passing before checkin
 - [x] 3.3 Add Redis connection and RQ job queue setup
 - [x] 3.4 Create job enqueue logic on document upload
 - [x] 3.5 Add job status endpoint (GET /jobs/{job_id})
-- [ ] 3.6 Add document retrieval endpoint (GET /documents/{doc_id})
+- [x] 3.6 Add document retrieval endpoint (GET /documents/{doc_id})
 
 ## Phase 4: NLP Pipeline (Mention Extraction)
 
-- [ ] 4.1 Create NLP service interface with extract_mentions method
+- [x] 4.1 Create NLP service interface with extract_mentions method
 - [ ] 4.2 Implement rule-based mention extractor (regex for common patterns)
 - [ ] 4.3 Implement negation detection (NegEx-style rules)
 - [ ] 4.4 Implement temporality detection (past/current/future)

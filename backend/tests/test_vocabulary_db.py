@@ -256,7 +256,7 @@ class TestDatabaseMappingServiceWithDB:
         if len(candidates) > 1:
             # First candidate should be exact match
             exact_found = False
-            for i, candidate in enumerate(candidates):
+            for _i, candidate in enumerate(candidates):
                 if candidate.method == MappingMethod.EXACT:
                     exact_found = True
                 elif candidate.method == MappingMethod.FUZZY and exact_found:

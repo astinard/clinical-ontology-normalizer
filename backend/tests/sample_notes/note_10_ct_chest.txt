@@ -1,0 +1,66 @@
+FACILITY: Example Medical Center (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: Radiology Report - CT Chest with Contrast
+DATE/TIME: 2026-01-30 08:22
+AUTHOR: Taylor Example, MD (Radiology)
+
+PATIENT: TEST, NOVEMBER
+MRN: TEST20016
+DOB: 1965-12-01
+AGE/SEX: 60-year-old male
+
+EXAM: CT Chest with IV Contrast (CT Angiography Protocol)
+
+CLINICAL INDICATION: 60-year-old male with pleuritic chest pain, dyspnea, and elevated D-dimer. Rule out pulmonary embolism.
+
+COMPARISON: CXR from 2026-01-29.
+
+TECHNIQUE: Helical CT of the chest was performed following administration of 75 mL Omnipaque 350 IV contrast with pulmonary embolism protocol timing. Coronal and sagittal reformats were generated.
+
+FINDINGS:
+
+PULMONARY ARTERIES:
+- Main pulmonary artery: Normal caliber.
+- Right pulmonary artery: Filling defect in the segmental artery to the right lower lobe posterior basal segment, consistent with acute pulmonary embolism.
+- Left pulmonary artery: No filling defect. Branches opacify normally.
+- No saddle embolus.
+- No right heart strain (RV:LV ratio < 1.0).
+
+LUNGS:
+- Right lower lobe: Peripheral wedge-shaped opacity in the posterior basal segment, likely representing pulmonary infarct. No cavitation.
+- Left lung: Clear. No masses or nodules.
+- No pneumothorax.
+- No significant atelectasis.
+
+AIRWAYS:
+- Trachea and main bronchi: Patent.
+- No endobronchial lesion.
+
+PLEURA:
+- Small right pleural effusion, likely reactive.
+- No left pleural effusion.
+- No pneumothorax.
+
+MEDIASTINUM:
+- Heart size: Normal.
+- No pericardial effusion.
+- Thoracic aorta: Normal caliber, no dissection.
+- Mediastinal lymph nodes: No pathologic lymphadenopathy.
+
+CHEST WALL:
+- No suspicious osseous lesions.
+- Mild degenerative changes of the thoracic spine.
+
+LIMITED UPPER ABDOMEN:
+- Liver, spleen, adrenals: Unremarkable on limited views.
+
+IMPRESSION:
+1. ACUTE PULMONARY EMBOLISM: Segmental pulmonary embolism in the right lower lobe posterior basal segment.
+2. RIGHT LOWER LOBE PULMONARY INFARCT: Peripheral wedge-shaped consolidation consistent with pulmonary infarction.
+3. SMALL RIGHT PLEURAL EFFUSION: Likely reactive.
+4. No evidence of right heart strain by CT criteria.
+
+CRITICAL FINDING: Acute pulmonary embolism. Findings communicated to Dr. Smith (ED physician) by phone at 08:35 on 2026-01-30.
+
+SIGNATURE
+Electronically signed by: Taylor Example, MD
+Date/Time Signed: 2026-01-30 08:40

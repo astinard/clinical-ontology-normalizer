@@ -1,0 +1,42 @@
+FACILITY: Example Telehealth (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: Visit Transcript (Clinician–Patient)
+DATE/TIME: 2026-02-10 09:05
+CLINICIAN: Dana Example, NP
+
+PATIENT: TEST, HOTEL
+MRN: TEST20010
+DOB: 1974-05-29
+AGE/SEX: 51-year-old male
+
+TRANSCRIPT (verbatim-style)
+Clinician: What brings you in today?
+Patient: Mostly my blood pressure meds. I ran out like… a week ago.
+Clinician: Any chest pain or shortness of breath?
+Patient: No chest pain. Breathing's fine. I'm just getting headaches when my pressure's high.
+Clinician: Any vision changes, weakness, trouble speaking?
+Patient: No, none of that.
+Clinician: What meds were you taking?
+Patient: Lisinopril 20, and that water pill—hydro… hydrochloro-something.
+Clinician: Hydrochlorothiazide?
+Patient: Yeah, that. I take it when I remember. Probably missed a bunch.
+Clinician: Any swelling in your legs?
+Patient: Not really. Maybe a little at the end of the day but nothing crazy.
+Clinician: Any kidney problems?
+Patient: Not that I know of. Last labs were "normal" per my doctor.
+Clinician: Any allergies?
+Patient: Penicillin makes me break out in a rash. No breathing problems though.
+
+ASSESSMENT (clinician summary)
+- Medication nonadherence due to running out of meds.
+- Hypertension (uncontrolled by history).
+- Headache likely secondary to elevated blood pressure; no neurologic red flags reported.
+
+PLAN
+- Refill lisinopril and hydrochlorothiazide.
+- Recommend home BP log.
+- Order BMP in 1–2 weeks to monitor potassium/creatinine on ACE inhibitor and diuretic.
+- ER precautions reviewed for chest pain, SOB, neuro deficits.
+
+SIGNATURE
+Electronically signed by: Dana Example, NP
+Date/Time Signed: 2026-02-10 09:22

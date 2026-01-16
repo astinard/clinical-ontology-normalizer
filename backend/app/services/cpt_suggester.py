@@ -1,0 +1,881 @@
+"""CPT-4 Code Suggester Service with Claim-Evidence-Reasoning Framework.
+
+This module provides CPT-4 (Current Procedural Terminology) code suggestions
+for medical procedures and services. It includes:
+
+- Procedure-to-code mapping with natural language processing
+- Claim-Evidence-Reasoning (CER) citations for each suggestion
+- Modifier suggestions where applicable
+- Documentation requirements
+- Related diagnosis codes for medical necessity
+
+Note: CPT codes are owned by the American Medical Association (AMA).
+Code suggestions should be verified by qualified medical coders.
+"""
+
+from dataclasses import dataclass, field
+from enum import Enum
+import threading
+
+
+class CPTCategory(Enum):
+    """CPT code categories."""
+
+    EVALUATION_MANAGEMENT = "Evaluation and Management"
+    ANESTHESIA = "Anesthesia"
+    SURGERY = "Surgery"
+    RADIOLOGY = "Radiology"
+    PATHOLOGY = "Pathology and Laboratory"
+    MEDICINE = "Medicine"
+
+
+class ServicePlace(Enum):
+    """Place of service for CPT codes."""
+
+    OFFICE = "11"  # Office
+    INPATIENT = "21"  # Inpatient Hospital
+    OUTPATIENT = "22"  # On Campus-Outpatient Hospital
+    EMERGENCY = "23"  # Emergency Room - Hospital
+    ASC = "24"  # Ambulatory Surgical Center
+    TELEHEALTH = "02"  # Telehealth
+
+
+class ConfidenceLevel(Enum):
+    """Confidence level for code suggestion."""
+
+    HIGH = "high"  # Strong documentation support
+    MEDIUM = "medium"  # Good support, may need review
+    LOW = "low"  # Weak support, needs verification
+
+
+@dataclass
+class CERCitation:
+    """Claim-Evidence-Reasoning citation for a code suggestion.
+
+    This framework helps clinicians understand WHY a code is suggested:
+    - Claim: What code is being suggested
+    - Evidence: What clinical documentation supports this
+    - Reasoning: Why the evidence supports this code
+    """
+
+    claim: str  # The assertion (e.g., "99214 is appropriate for this encounter")
+    evidence: list[str]  # Clinical findings supporting the claim
+    reasoning: str  # Explanation connecting evidence to claim
+    strength: ConfidenceLevel  # How strong is this CER
+
+
+@dataclass
+class DocumentationRequirement:
+    """Required documentation elements for a CPT code."""
+
+    element: str  # What needs to be documented
+    present: bool | None = None  # Whether it's documented (None = unknown)
+    notes: str = ""
+
+
+@dataclass
+class CPTCode:
+    """A CPT-4 code with description and metadata."""
+
+    code: str
+    description: str
+    category: CPTCategory
+    work_rvu: float = 0.0  # Work Relative Value Unit
+    typical_time_minutes: int = 0
+    global_period: str = ""  # XXX, 000, 010, 090
+
+    # Related codes
+    add_on_codes: list[str] = field(default_factory=list)
+    related_codes: list[str] = field(default_factory=list)
+
+    # Synonyms for matching
+    synonyms: list[str] = field(default_factory=list)
+
+    # Common modifiers
+    common_modifiers: list[tuple[str, str]] = field(default_factory=list)  # (modifier, description)
+
+    # Documentation requirements
+    documentation_elements: list[str] = field(default_factory=list)
+
+    # Medical necessity - ICD-10 codes commonly used
+    common_diagnoses: list[str] = field(default_factory=list)
+
+
+@dataclass
+class CPTSuggestion:
+    """A suggested CPT code with CER citation."""
+
+    code: str
+    description: str
+    category: str
+    confidence: ConfidenceLevel
+
+    # CER Framework
+    cer_citation: CERCitation
+
+    # Additional info
+    work_rvu: float
+    typical_time_minutes: int
+
+    # Modifiers that may apply
+    suggested_modifiers: list[tuple[str, str]] = field(default_factory=list)
+
+    # Documentation checklist
+    documentation_checklist: list[DocumentationRequirement] = field(default_factory=list)
+
+    # Related diagnosis codes for medical necessity
+    supporting_diagnoses: list[tuple[str, str]] = field(default_factory=list)  # (ICD-10, description)
+
+    # Alternative codes to consider
+    alternative_codes: list[tuple[str, str]] = field(default_factory=list)
+
+    # Coding guidance
+    coding_notes: list[str] = field(default_factory=list)
+
+
+@dataclass
+class CPTSuggestionResult:
+    """Result from CPT code suggestion."""
+
+    query: str
+    clinical_context: dict[str, str]  # Extracted clinical context
+    suggestions: list[CPTSuggestion]
+    total_matches: int
+    documentation_gaps: list[str]  # Missing documentation that would affect coding
+    coding_tips: list[str]
+
+
+# ============================================================================
+# CPT Code Database
+# ============================================================================
+
+CPT_CODES: list[CPTCode] = [
+    # =========================================================================
+    # EVALUATION AND MANAGEMENT (99201-99499)
+    # =========================================================================
+    # Office/Outpatient Visits - New Patient
+    CPTCode(
+        code="99202",
+        description="Office/outpatient visit, new patient, straightforward MDM or 15-29 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=0.93,
+        typical_time_minutes=22,
+        synonyms=["new patient visit", "new patient office visit", "level 2 new"],
+        documentation_elements=[
+            "Chief complaint",
+            "History of present illness",
+            "Medical decision making straightforward OR time 15-29 min",
+        ],
+        common_diagnoses=["Z00.00", "Z00.01"],  # General exam
+    ),
+    CPTCode(
+        code="99203",
+        description="Office/outpatient visit, new patient, low MDM or 30-44 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=1.60,
+        typical_time_minutes=37,
+        synonyms=["new patient visit", "level 3 new"],
+        documentation_elements=[
+            "Chief complaint",
+            "History of present illness",
+            "Medical decision making low complexity OR time 30-44 min",
+            "2+ chronic conditions",
+        ],
+        common_diagnoses=["I10", "E11.9"],
+    ),
+    CPTCode(
+        code="99204",
+        description="Office/outpatient visit, new patient, moderate MDM or 45-59 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=2.60,
+        typical_time_minutes=52,
+        synonyms=["new patient visit", "level 4 new", "moderate complexity new"],
+        documentation_elements=[
+            "Chief complaint",
+            "Comprehensive history",
+            "Medical decision making moderate complexity OR time 45-59 min",
+            "Undiagnosed new problem with uncertain prognosis",
+            "Prescription drug management",
+        ],
+        common_diagnoses=["I10", "E11.9", "I25.10"],
+    ),
+    CPTCode(
+        code="99205",
+        description="Office/outpatient visit, new patient, high MDM or 60-74 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=3.50,
+        typical_time_minutes=67,
+        synonyms=["new patient visit", "level 5 new", "high complexity new"],
+        documentation_elements=[
+            "Chief complaint",
+            "Comprehensive history",
+            "Medical decision making high complexity OR time 60-74 min",
+            "Acute illness with systemic symptoms",
+            "Drug therapy requiring intensive monitoring",
+        ],
+        common_diagnoses=["I50.9", "J44.1", "I21.9"],
+    ),
+
+    # Office/Outpatient Visits - Established Patient
+    CPTCode(
+        code="99211",
+        description="Office/outpatient visit, established patient, may not require physician presence",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=0.18,
+        typical_time_minutes=5,
+        synonyms=["nurse visit", "level 1 established", "brief visit"],
+        documentation_elements=[
+            "Presenting problem minimal",
+            "Nurse or clinical staff evaluation",
+        ],
+        common_diagnoses=["Z23", "Z79.01"],  # Immunization, anticoagulant monitoring
+    ),
+    CPTCode(
+        code="99212",
+        description="Office/outpatient visit, established patient, straightforward MDM or 10-19 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=0.70,
+        typical_time_minutes=15,
+        synonyms=["follow up visit", "level 2 established", "brief follow up"],
+        documentation_elements=[
+            "Chief complaint",
+            "Medical decision making straightforward OR time 10-19 min",
+            "Self-limited or minor problem",
+        ],
+        common_diagnoses=["J06.9", "B34.9"],  # URI, viral infection
+    ),
+    CPTCode(
+        code="99213",
+        description="Office/outpatient visit, established patient, low MDM or 20-29 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=1.30,
+        typical_time_minutes=24,
+        synonyms=["follow up visit", "level 3 established", "routine follow up"],
+        documentation_elements=[
+            "Chief complaint",
+            "History of present illness",
+            "Medical decision making low complexity OR time 20-29 min",
+            "2+ self-limited problems OR 1 chronic illness stable",
+        ],
+        common_diagnoses=["I10", "E11.9", "E78.5"],
+    ),
+    CPTCode(
+        code="99214",
+        description="Office/outpatient visit, established patient, moderate MDM or 30-39 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=1.92,
+        typical_time_minutes=34,
+        synonyms=["follow up visit", "level 4 established", "moderate complexity"],
+        documentation_elements=[
+            "Chief complaint",
+            "Extended history of present illness",
+            "Medical decision making moderate complexity OR time 30-39 min",
+            "1+ chronic illness with mild exacerbation",
+            "Prescription drug management",
+        ],
+        common_diagnoses=["I10", "E11.65", "I50.9", "J44.1"],
+    ),
+    CPTCode(
+        code="99215",
+        description="Office/outpatient visit, established patient, high MDM or 40-54 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=2.80,
+        typical_time_minutes=47,
+        synonyms=["follow up visit", "level 5 established", "high complexity"],
+        documentation_elements=[
+            "Chief complaint",
+            "Comprehensive history",
+            "Medical decision making high complexity OR time 40-54 min",
+            "Chronic illness with severe exacerbation",
+            "Drug therapy requiring intensive monitoring",
+        ],
+        common_diagnoses=["I50.22", "I21.9", "J44.1", "E11.65"],
+    ),
+
+    # Hospital Inpatient Services
+    CPTCode(
+        code="99221",
+        description="Initial hospital care, low or moderate MDM or 40 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=2.00,
+        typical_time_minutes=40,
+        synonyms=["hospital admission", "inpatient admission", "admit"],
+        documentation_elements=[
+            "Chief complaint",
+            "Comprehensive history",
+            "Admission orders",
+            "Medical decision making low/moderate complexity",
+        ],
+        common_diagnoses=["J18.9", "I50.9"],
+    ),
+    CPTCode(
+        code="99222",
+        description="Initial hospital care, moderate MDM or 55 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=2.61,
+        typical_time_minutes=55,
+        synonyms=["hospital admission", "inpatient admission"],
+        documentation_elements=[
+            "Comprehensive history",
+            "Comprehensive examination",
+            "Medical decision making moderate complexity",
+            "Multiple conditions requiring workup",
+        ],
+        common_diagnoses=["J18.9", "I50.22", "I21.9"],
+    ),
+    CPTCode(
+        code="99223",
+        description="Initial hospital care, high MDM or 75 min",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=3.86,
+        typical_time_minutes=75,
+        synonyms=["hospital admission", "complex admission"],
+        documentation_elements=[
+            "Comprehensive history",
+            "Comprehensive examination",
+            "Medical decision making high complexity",
+            "Severely ill patient",
+            "Multiple diagnoses requiring active management",
+        ],
+        common_diagnoses=["A41.9", "I21.9", "I50.22"],
+    ),
+
+    # Emergency Department
+    CPTCode(
+        code="99281",
+        description="Emergency department visit, self-limited problem",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=0.45,
+        typical_time_minutes=10,
+        synonyms=["ed visit", "er visit", "emergency room"],
+        documentation_elements=[
+            "Chief complaint",
+            "Self-limited or minor problem",
+        ],
+        common_diagnoses=["S61.419A"],  # Minor laceration
+    ),
+    CPTCode(
+        code="99283",
+        description="Emergency department visit, moderate severity problem",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=1.42,
+        typical_time_minutes=30,
+        synonyms=["ed visit", "er visit", "emergency room"],
+        documentation_elements=[
+            "Chief complaint",
+            "Extended history",
+            "Moderately severe problem",
+        ],
+        common_diagnoses=["R07.9", "R10.9"],  # Chest pain, abdominal pain
+    ),
+    CPTCode(
+        code="99284",
+        description="Emergency department visit, high severity problem",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=2.56,
+        typical_time_minutes=45,
+        synonyms=["ed visit", "er visit", "emergency room"],
+        documentation_elements=[
+            "Chief complaint",
+            "Comprehensive history",
+            "High severity problem requiring urgent evaluation",
+        ],
+        common_diagnoses=["R07.9", "I21.9", "I63.9"],
+    ),
+    CPTCode(
+        code="99285",
+        description="Emergency department visit, imminent life threat",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=3.80,
+        typical_time_minutes=60,
+        synonyms=["ed visit", "er visit", "critical ed"],
+        documentation_elements=[
+            "Chief complaint",
+            "Comprehensive history",
+            "Life-threatening condition",
+            "Immediate intervention required",
+        ],
+        common_diagnoses=["I21.9", "I63.9", "A41.9"],
+    ),
+
+    # =========================================================================
+    # COMMON PROCEDURES
+    # =========================================================================
+    CPTCode(
+        code="93000",
+        description="Electrocardiogram, routine ECG with interpretation and report",
+        category=CPTCategory.MEDICINE,
+        work_rvu=0.17,
+        typical_time_minutes=5,
+        synonyms=["ecg", "ekg", "electrocardiogram", "12 lead ecg"],
+        documentation_elements=[
+            "12-lead ECG performed",
+            "Interpretation of rhythm and findings",
+        ],
+        common_diagnoses=["R00.0", "R00.1", "I48.91", "I25.10"],
+        common_modifiers=[("26", "Professional component only")],
+    ),
+    CPTCode(
+        code="71046",
+        description="Radiologic examination, chest; 2 views",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=0.22,
+        typical_time_minutes=5,
+        synonyms=["chest xray", "cxr", "chest x-ray", "pa and lateral chest"],
+        documentation_elements=[
+            "PA and lateral views obtained",
+            "Radiology interpretation",
+        ],
+        common_diagnoses=["R05", "R06.02", "J18.9"],
+        common_modifiers=[("26", "Professional component only"), ("TC", "Technical component only")],
+    ),
+    CPTCode(
+        code="80053",
+        description="Comprehensive metabolic panel",
+        category=CPTCategory.PATHOLOGY,
+        work_rvu=0.0,  # Lab tests don't have work RVU
+        typical_time_minutes=0,
+        synonyms=["cmp", "comprehensive metabolic panel", "basic labs"],
+        documentation_elements=[
+            "14 chemistry tests including electrolytes, glucose, renal and liver function",
+        ],
+        common_diagnoses=["E11.9", "N18.9", "K76.0"],
+    ),
+    CPTCode(
+        code="85025",
+        description="Blood count; complete (CBC), automated, and automated differential WBC count",
+        category=CPTCategory.PATHOLOGY,
+        work_rvu=0.0,
+        typical_time_minutes=0,
+        synonyms=["cbc", "complete blood count", "cbc with diff"],
+        documentation_elements=[
+            "CBC with differential performed",
+        ],
+        common_diagnoses=["D64.9", "J18.9", "A41.9"],
+    ),
+    CPTCode(
+        code="36415",
+        description="Collection of venous blood by venipuncture",
+        category=CPTCategory.SURGERY,
+        work_rvu=0.0,
+        typical_time_minutes=5,
+        synonyms=["blood draw", "venipuncture", "phlebotomy"],
+        documentation_elements=[
+            "Venous blood sample collected",
+        ],
+        common_diagnoses=[],  # Usually not separately billable in office
+    ),
+    CPTCode(
+        code="96372",
+        description="Therapeutic, prophylactic, or diagnostic injection, SC or IM",
+        category=CPTCategory.MEDICINE,
+        work_rvu=0.17,
+        typical_time_minutes=5,
+        synonyms=["injection", "im injection", "subq injection", "shot"],
+        documentation_elements=[
+            "Drug administered",
+            "Route of administration",
+            "Site of injection",
+        ],
+        common_diagnoses=["M54.5", "M79.3"],
+        add_on_codes=["J0702", "J1030"],  # Drug codes
+    ),
+    CPTCode(
+        code="99406",
+        description="Smoking and tobacco use cessation counseling visit; 3-10 min",
+        category=CPTCategory.MEDICINE,
+        work_rvu=0.24,
+        typical_time_minutes=7,
+        synonyms=["smoking cessation", "tobacco counseling"],
+        documentation_elements=[
+            "Tobacco cessation counseling provided",
+            "Duration of counseling",
+            "Discussion of cessation strategies",
+        ],
+        common_diagnoses=["F17.210", "Z87.891"],
+    ),
+
+    # =========================================================================
+    # TELEHEALTH
+    # =========================================================================
+    CPTCode(
+        code="99441",
+        description="Telephone E/M service, 5-10 minutes",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=0.25,
+        typical_time_minutes=8,
+        synonyms=["phone visit", "telephone visit", "phone call"],
+        documentation_elements=[
+            "Medical discussion by telephone",
+            "Time documented",
+            "Clinical assessment",
+        ],
+        common_diagnoses=["J06.9", "R05"],
+    ),
+    CPTCode(
+        code="99442",
+        description="Telephone E/M service, 11-20 minutes",
+        category=CPTCategory.EVALUATION_MANAGEMENT,
+        work_rvu=0.50,
+        typical_time_minutes=15,
+        synonyms=["phone visit", "telephone visit"],
+        documentation_elements=[
+            "Medical discussion by telephone",
+            "Time documented",
+            "Clinical assessment and plan",
+        ],
+        common_diagnoses=["I10", "E11.9"],
+    ),
+]
+
+
+# Build synonym index
+SYNONYM_TO_CPT: dict[str, list[str]] = {}
+for _code in CPT_CODES:
+    for syn in _code.synonyms:
+        syn_lower = syn.lower()
+        if syn_lower not in SYNONYM_TO_CPT:
+            SYNONYM_TO_CPT[syn_lower] = []
+        SYNONYM_TO_CPT[syn_lower].append(_code.code)
+
+
+# ============================================================================
+# CPT Suggester Service
+# ============================================================================
+
+# Singleton instance and lock
+_cpt_service: "CPTSuggesterService | None" = None
+_cpt_lock = threading.Lock()
+
+
+def get_cpt_suggester_service() -> "CPTSuggesterService":
+    """Get the singleton CPT suggester service instance."""
+    global _cpt_service
+    if _cpt_service is None:
+        with _cpt_lock:
+            if _cpt_service is None:
+                _cpt_service = CPTSuggesterService()
+    return _cpt_service
+
+
+def reset_cpt_suggester_service() -> None:
+    """Reset the singleton instance (for testing)."""
+    global _cpt_service
+    with _cpt_lock:
+        _cpt_service = None
+
+
+class CPTSuggesterService:
+    """Service for suggesting CPT codes with CER citations."""
+
+    def __init__(self) -> None:
+        """Initialize the CPT suggester service."""
+        self._codes: dict[str, CPTCode] = {}
+        self._synonym_index: dict[str, list[str]] = SYNONYM_TO_CPT.copy()
+
+        for code in CPT_CODES:
+            self._codes[code.code] = code
+
+    def suggest_codes(
+        self,
+        query: str,
+        clinical_context: dict[str, str] | None = None,
+        max_suggestions: int = 10,
+    ) -> CPTSuggestionResult:
+        """Suggest CPT codes with CER citations.
+
+        Args:
+            query: Description of procedure/service
+            clinical_context: Optional context dict with keys like
+                             'time_spent', 'mdm_complexity', 'new_patient',
+                             'setting', 'diagnoses'
+            max_suggestions: Maximum number of suggestions
+
+        Returns:
+            CPTSuggestionResult with CER-cited suggestions.
+        """
+        query_lower = query.lower().strip()
+        clinical_context = clinical_context or {}
+        suggestions: list[CPTSuggestion] = []
+        seen_codes: set[str] = set()
+
+        # 1. Exact synonym match
+        if query_lower in self._synonym_index:
+            for code_str in self._synonym_index[query_lower]:
+                if code_str in self._codes and code_str not in seen_codes:
+                    code = self._codes[code_str]
+                    suggestion = self._create_suggestion_with_cer(
+                        code, clinical_context,
+                        match_type="exact_synonym",
+                        matched_term=query_lower
+                    )
+                    suggestions.append(suggestion)
+                    seen_codes.add(code_str)
+
+        # 2. Partial synonym match
+        for synonym, code_list in self._synonym_index.items():
+            if query_lower in synonym or synonym in query_lower:
+                for code_str in code_list:
+                    if code_str in self._codes and code_str not in seen_codes:
+                        code = self._codes[code_str]
+                        suggestion = self._create_suggestion_with_cer(
+                            code, clinical_context,
+                            match_type="partial_synonym",
+                            matched_term=synonym
+                        )
+                        suggestions.append(suggestion)
+                        seen_codes.add(code_str)
+
+        # 3. Description search
+        query_words = set(query_lower.split())
+        for code in self._codes.values():
+            if code.code in seen_codes:
+                continue
+
+            desc_lower = code.description.lower()
+            desc_words = set(desc_lower.split())
+
+            stopwords = {"of", "the", "and", "or", "a", "an", "with", "without", "for", "to"}
+            common_words = (query_words & desc_words) - stopwords
+
+            if len(common_words) >= 2:
+                suggestion = self._create_suggestion_with_cer(
+                    code, clinical_context,
+                    match_type="description",
+                    matched_term=", ".join(common_words)
+                )
+                suggestions.append(suggestion)
+                seen_codes.add(code.code)
+
+        # Sort by confidence
+        confidence_order = {ConfidenceLevel.HIGH: 0, ConfidenceLevel.MEDIUM: 1, ConfidenceLevel.LOW: 2}
+        suggestions.sort(key=lambda s: confidence_order[s.confidence])
+
+        # Identify documentation gaps
+        documentation_gaps = self._identify_documentation_gaps(suggestions, clinical_context)
+
+        # Generate coding tips
+        coding_tips = self._generate_coding_tips(query, suggestions, clinical_context)
+
+        return CPTSuggestionResult(
+            query=query,
+            clinical_context=clinical_context,
+            suggestions=suggestions[:max_suggestions],
+            total_matches=len(suggestions),
+            documentation_gaps=documentation_gaps,
+            coding_tips=coding_tips,
+        )
+
+    def _create_suggestion_with_cer(
+        self,
+        code: CPTCode,
+        clinical_context: dict[str, str],
+        match_type: str,
+        matched_term: str,
+    ) -> CPTSuggestion:
+        """Create a CPT suggestion with CER citation."""
+
+        # Build evidence from clinical context
+        evidence: list[str] = []
+
+        # Time-based evidence
+        if "time_spent" in clinical_context:
+            time = int(clinical_context.get("time_spent", 0))
+            if time > 0:
+                evidence.append(f"Total time spent: {time} minutes")
+
+        # MDM complexity evidence
+        if "mdm_complexity" in clinical_context:
+            evidence.append(f"Medical decision making: {clinical_context['mdm_complexity']} complexity")
+
+        # Setting evidence
+        if "setting" in clinical_context:
+            evidence.append(f"Setting: {clinical_context['setting']}")
+
+        # Patient type
+        if "new_patient" in clinical_context:
+            patient_type = "new" if clinical_context.get("new_patient", "").lower() in ["true", "yes", "1"] else "established"
+            evidence.append(f"Patient type: {patient_type}")
+
+        # Diagnoses
+        if "diagnoses" in clinical_context:
+            evidence.append(f"Diagnoses documented: {clinical_context['diagnoses']}")
+
+        # If no context provided, use generic evidence
+        if not evidence:
+            evidence = [f"Match based on: {matched_term}"]
+
+        # Determine confidence
+        if match_type == "exact_synonym" and len(evidence) > 2:
+            confidence = ConfidenceLevel.HIGH
+        elif match_type in ["exact_synonym", "partial_synonym"]:
+            confidence = ConfidenceLevel.MEDIUM
+        else:
+            confidence = ConfidenceLevel.LOW
+
+        # Build reasoning
+        reasoning_parts = []
+        if "E/M" in code.description or "visit" in code.description.lower():
+            reasoning_parts.append(
+                f"The code {code.code} is appropriate for E/M services when "
+                f"documentation supports the corresponding level of complexity."
+            )
+        if code.typical_time_minutes > 0:
+            reasoning_parts.append(
+                f"Typical time for this service is {code.typical_time_minutes} minutes."
+            )
+        if code.work_rvu > 0:
+            reasoning_parts.append(f"Work RVU: {code.work_rvu}")
+
+        reasoning = " ".join(reasoning_parts) if reasoning_parts else (
+            f"This code matches based on {match_type} matching for '{matched_term}'."
+        )
+
+        # Create CER citation
+        cer = CERCitation(
+            claim=f"{code.code} ({code.description}) is appropriate for this service",
+            evidence=evidence,
+            reasoning=reasoning,
+            strength=confidence,
+        )
+
+        # Build documentation checklist
+        doc_checklist = [
+            DocumentationRequirement(
+                element=elem,
+                present=None,  # Unknown without parsing actual documentation
+                notes=""
+            )
+            for elem in code.documentation_elements
+        ]
+
+        # Get supporting diagnoses
+        supporting_dx = []
+        for dx in code.common_diagnoses[:5]:
+            # In a full implementation, would lookup ICD-10 descriptions
+            supporting_dx.append((dx, f"Common diagnosis for {code.code}"))
+
+        # Get alternative codes
+        alternatives = []
+        for other_code in self._codes.values():
+            if other_code.code != code.code and other_code.category == code.category:
+                if code.code.startswith("992") and other_code.code.startswith("992"):
+                    # Same E/M category
+                    alternatives.append((other_code.code, other_code.description))
+
+        # Build coding notes
+        coding_notes = []
+        if code.add_on_codes:
+            coding_notes.append(f"Consider add-on codes: {', '.join(code.add_on_codes[:3])}")
+        if code.global_period:
+            coding_notes.append(f"Global period: {code.global_period}")
+        if code.common_modifiers:
+            mod_str = ", ".join([f"{m[0]} ({m[1]})" for m in code.common_modifiers[:3]])
+            coding_notes.append(f"Common modifiers: {mod_str}")
+
+        return CPTSuggestion(
+            code=code.code,
+            description=code.description,
+            category=code.category.value,
+            confidence=confidence,
+            cer_citation=cer,
+            work_rvu=code.work_rvu,
+            typical_time_minutes=code.typical_time_minutes,
+            suggested_modifiers=code.common_modifiers[:5],
+            documentation_checklist=doc_checklist,
+            supporting_diagnoses=supporting_dx,
+            alternative_codes=alternatives[:5],
+            coding_notes=coding_notes,
+        )
+
+    def _identify_documentation_gaps(
+        self,
+        suggestions: list[CPTSuggestion],
+        clinical_context: dict[str, str],
+    ) -> list[str]:
+        """Identify documentation gaps that could affect coding."""
+        gaps = []
+
+        # Check for time documentation
+        has_time = "time_spent" in clinical_context
+        em_codes = [s for s in suggestions if s.category == "Evaluation and Management"]
+        if em_codes and not has_time:
+            gaps.append("Total time spent not documented - required for time-based coding")
+
+        # Check for MDM complexity
+        if em_codes and "mdm_complexity" not in clinical_context:
+            gaps.append("Medical decision making complexity not specified")
+
+        # Check for patient type
+        if em_codes and "new_patient" not in clinical_context:
+            gaps.append("Patient type (new vs established) not documented")
+
+        return gaps
+
+    def _generate_coding_tips(
+        self,
+        query: str,
+        suggestions: list[CPTSuggestion],
+        clinical_context: dict[str, str],
+    ) -> list[str]:
+        """Generate coding tips based on context."""
+        tips = []
+
+        # E/M specific tips
+        em_codes = [s for s in suggestions if "992" in s.code]
+        if em_codes:
+            tips.append("For E/M coding, document either time OR MDM complexity (whichever supports higher level)")
+
+            if "time_spent" in clinical_context:
+                time = int(clinical_context.get("time_spent", 0))
+                if time > 40:
+                    tips.append("Consider prolonged services codes (99354-99357) if time exceeds typical")
+
+        # Hospital vs office tips
+        query_lower = query.lower()
+        if "hospital" in query_lower or "inpatient" in query_lower:
+            tips.append("For hospital E/M, use 99221-99223 for admission, 99231-99233 for subsequent")
+        elif "emergency" in query_lower or "ed" in query_lower:
+            tips.append("ED visits (99281-99285) do not distinguish new vs established patients")
+
+        # Procedure tips
+        if any(s.category == "Radiology" for s in suggestions):
+            tips.append("For radiology, specify professional (26) vs technical (TC) component if split billing")
+
+        return tips[:5]
+
+    def get_code(self, code: str) -> CPTCode | None:
+        """Get a specific CPT code."""
+        return self._codes.get(code)
+
+    def search_codes(self, query: str, limit: int = 20) -> list[CPTCode]:
+        """Search for codes by description or synonym."""
+        query_lower = query.lower()
+        matches = []
+
+        for code in self._codes.values():
+            if query_lower in code.description.lower():
+                matches.append(code)
+                continue
+            if any(query_lower in syn.lower() for syn in code.synonyms):
+                matches.append(code)
+
+        return matches[:limit]
+
+    def get_codes_by_category(self, category: CPTCategory) -> list[CPTCode]:
+        """Get all codes in a category."""
+        return [code for code in self._codes.values() if code.category == category]
+
+    def get_stats(self) -> dict:
+        """Get statistics about the code database."""
+        by_category: dict[str, int] = {}
+
+        for code in self._codes.values():
+            cat = code.category.value
+            by_category[cat] = by_category.get(cat, 0) + 1
+
+        return {
+            "total_codes": len(self._codes),
+            "total_synonyms": len(self._synonym_index),
+            "by_category": by_category,
+        }

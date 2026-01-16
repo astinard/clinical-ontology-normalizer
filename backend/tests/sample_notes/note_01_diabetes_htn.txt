@@ -1,0 +1,71 @@
+PROGRESS NOTE
+
+Patient: John Smith
+MRN: 12345
+Date: 2026-01-15
+Provider: Dr. Sarah Johnson
+
+CHIEF COMPLAINT:
+Follow-up for diabetes and hypertension management.
+
+HISTORY OF PRESENT ILLNESS:
+62-year-old male with Type 2 Diabetes Mellitus and Essential Hypertension presents for routine follow-up. Patient reports good compliance with medications. He checks his blood sugar daily, averaging 130-150 mg/dL fasting. He denies polyuria, polydipsia, or blurred vision. Blood pressure at home has been ranging 135-145/80-85 mmHg. He denies chest pain, shortness of breath, or lower extremity edema.
+
+PAST MEDICAL HISTORY:
+1. Type 2 Diabetes Mellitus - diagnosed 2018
+2. Essential Hypertension - diagnosed 2015
+3. Hyperlipidemia
+4. Obesity - BMI 32
+
+MEDICATIONS:
+1. Metformin 1000mg twice daily
+2. Lisinopril 20mg daily
+3. Atorvastatin 40mg daily at bedtime
+4. Aspirin 81mg daily
+
+ALLERGIES: NKDA
+
+VITAL SIGNS:
+BP: 142/88 mmHg
+HR: 78 bpm
+Weight: 215 lbs
+Height: 5'10"
+BMI: 30.9
+
+PHYSICAL EXAM:
+General: Alert, oriented, no acute distress
+HEENT: Normocephalic, atraumatic
+Cardiovascular: Regular rate and rhythm, no murmurs
+Lungs: Clear to auscultation bilaterally
+Extremities: No edema, pulses 2+ bilateral
+
+LABORATORY RESULTS:
+HbA1c: 7.4% (goal <7%)
+Fasting glucose: 138 mg/dL
+Creatinine: 1.1 mg/dL
+eGFR: 72 mL/min
+LDL: 98 mg/dL
+HDL: 42 mg/dL
+Triglycerides: 165 mg/dL
+
+ASSESSMENT AND PLAN:
+1. Type 2 Diabetes Mellitus - suboptimally controlled
+   - HbA1c 7.4%, above goal
+   - Increase Metformin to 1000mg three times daily
+   - Consider adding SGLT2 inhibitor if no improvement in 3 months
+   - Continue diabetic diet and exercise counseling
+
+2. Essential Hypertension - not at goal
+   - BP 142/88, above target of <130/80
+   - Increase Lisinopril to 40mg daily
+   - Continue low-sodium diet
+
+3. Hyperlipidemia - well controlled
+   - LDL at goal on current statin therapy
+   - Continue Atorvastatin 40mg
+
+4. Obesity
+   - Discussed importance of weight loss
+   - Referral to nutritionist
+
+Follow-up: 3 months

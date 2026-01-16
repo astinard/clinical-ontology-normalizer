@@ -71,6 +71,22 @@ export default function Home() {
               </Link>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Clinical Search</CardTitle>
+              <CardDescription>
+                Semantic search and Q&A over clinical notes
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/search">
+                <Button variant="outline" className="w-full">
+                  Search & Ask
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="mt-12">

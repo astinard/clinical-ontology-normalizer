@@ -1,0 +1,110 @@
+FACILITY: Example Medical Center (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: ED Provider Note
+DATE/TIME: 2026-01-18 14:32
+AUTHOR: Morgan Example, MD (Emergency Medicine)
+
+PATIENT: TEST, INDIA
+MRN: TEST20011
+DOB: 1958-09-03
+AGE/SEX: 67-year-old female
+
+CHIEF COMPLAINT
+Worsening shortness of breath and cough x 3 days.
+
+HISTORY OF PRESENT ILLNESS
+67F with severe COPD (FEV1 ~35% predicted per patient), on home oxygen 2L continuous, presents with 3 days of worsening dyspnea and productive cough with yellow-green sputum. Reports increased use of rescue inhaler (albuterol) from 2-3x/day to 8-10x/day. Denies fever but feels "chilled." Reports mild chest tightness with coughing. No hemoptysis. No leg swelling. No chest pain at rest.
+
+Last hospitalization for COPD exacerbation 4 months ago.
+
+Current smoker, 45 pack-year history. Tried to quit multiple times.
+
+REVIEW OF SYSTEMS
+Positive: dyspnea, cough, sputum production, mild chest tightness with coughing.
+Negative: fever, hemoptysis, chest pain at rest, leg swelling, syncope, weight loss.
+
+PAST MEDICAL HISTORY
+- COPD, severe (GOLD stage III-IV)
+- Hypertension
+- Osteoporosis
+- Gastroesophageal reflux disease
+- Depression
+
+MEDICATIONS
+- Tiotropium 18 mcg inhaled daily
+- Fluticasone/salmeterol 250/50 inhaled BID
+- Albuterol HFA PRN
+- Lisinopril 10 mg daily
+- Omeprazole 20 mg daily
+- Sertraline 50 mg daily
+- Alendronate 70 mg weekly
+- Home oxygen 2L NC continuous
+
+ALLERGIES
+- Sulfa: rash
+
+SOCIAL HISTORY
+- Current smoker, 45 pack-years
+- Lives alone
+- Independent with ADLs at baseline
+
+VITAL SIGNS (ED triage)
+14:15  BP 148/88  HR 102  RR 26  Temp 37.4 C  SpO2 86% on 2L NC (home O2)
+After 4L NC: SpO2 91%
+
+PHYSICAL EXAM
+General: Moderate respiratory distress, tripoding, speaking in short phrases.
+HEENT: No oropharyngeal erythema.
+Neck: No JVD.
+Cardiac: Regular rate, tachycardic, no murmurs.
+Lungs: Diffuse expiratory wheezes bilaterally, prolonged expiratory phase, decreased breath sounds at bases. No crackles.
+Abdomen: Soft, non-tender.
+Extremities: No edema. No calf tenderness.
+
+ED COURSE
+Differential includes acute COPD exacerbation (likely infectious trigger), pneumonia, heart failure exacerbation, PE (low suspicion).
+
+Given purulent sputum, worsening dyspnea, and mild leukocytosis, clinical picture consistent with acute exacerbation of COPD likely with infectious trigger.
+
+CXR shows hyperinflation but no focal consolidation. No pleural effusion.
+
+TREATMENTS IN ED
+- Oxygen increased to 4L NC (target SpO2 88-92%)
+- Albuterol/ipratropium nebulizer x3
+- Methylprednisolone 125 mg IV x1
+- Azithromycin 500 mg PO x1
+
+RESULTS
+LABS (14:40)
+- WBC 12.4 K/uL (elevated)
+- Hgb 14.2 g/dL
+- Plt 245 K/uL
+- BMP within normal limits
+- Procalcitonin 0.18 ng/mL (low)
+- BNP 89 pg/mL (normal)
+
+ABG (on 4L NC):
+- pH 7.36
+- pCO2 52 mmHg (elevated)
+- pO2 62 mmHg
+- HCO3 28 mmol/L
+
+CXR: Hyperinflated lungs, flattened diaphragms. No focal consolidation. No effusion.
+
+ASSESSMENT
+1) Acute exacerbation of COPD, likely infectious etiology.
+2) Hypoxic respiratory failure, chronic.
+3) Tobacco use disorder, current.
+
+PLAN
+- Admit to medicine for continued bronchodilators, steroids, and antibiotics.
+- Continue oxygen therapy; target SpO2 88-92%.
+- Smoking cessation counseling.
+- Pulmonology follow-up after discharge.
+
+DISPOSITION
+Admit: Medicine/Telemetry.
+Condition: Stable.
+
+SIGNATURE
+Electronically signed by: Morgan Example, MD
+Date/Time Signed: 2026-01-18 15:48

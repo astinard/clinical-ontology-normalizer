@@ -1697,3 +1697,1092 @@ async def check_drug_safety(
         check_time_ms=round(check_time_ms, 2),
         database_stats=service.get_stats(),
     )
+
+
+# ============================================================================
+# ICD-10 Code Suggestion Endpoint (with CER Framework)
+# ============================================================================
+
+
+class ICD10SuggestRequest(BaseModel):
+    """Request body for ICD-10 code suggestion."""
+
+    query: str = Field(
+        ...,
+        description="Clinical text or diagnosis to code (e.g., 'hypertension', 'type 2 diabetes')",
+    )
+    max_suggestions: int = Field(10, ge=1, le=20, description="Maximum codes to return")
+
+
+class CERCitationResponse(BaseModel):
+    """Claim-Evidence-Reasoning citation for a code suggestion."""
+
+    claim: str = Field(..., description="The assertion about code appropriateness")
+    evidence: list[str] = Field(..., description="Clinical findings supporting the claim")
+    reasoning: str = Field(..., description="Explanation connecting evidence to the claim")
+    strength: str = Field(..., description="Confidence strength (high, medium, low)")
+    guidelines: list[str] = Field(default_factory=list, description="Relevant coding guidelines")
+
+
+class ICD10SuggestionResponse(BaseModel):
+    """A suggested ICD-10 code with CER citation."""
+
+    code: str = Field(..., description="ICD-10-CM code")
+    description: str = Field(..., description="Code description")
+    confidence: str = Field(..., description="Confidence level (high, medium, low)")
+    match_reason: str = Field(..., description="Why this code was matched")
+    is_billable: bool = Field(..., description="Whether the code is billable")
+    category: str = Field(..., description="ICD-10 chapter/category")
+    cer_citation: CERCitationResponse = Field(..., description="CER citation for this suggestion")
+    more_specific_codes: list[tuple[str, str]] = Field(
+        default_factory=list, description="More specific codes available"
+    )
+    related_codes: list[tuple[str, str]] = Field(default_factory=list, description="Related codes")
+    coding_guidance: list[str] = Field(default_factory=list, description="Coding guidance notes")
+
+
+class ICD10SuggestResponse(BaseModel):
+    """Response from ICD-10 code suggestion."""
+
+    query: str = Field(..., description="Original query")
+    suggestions: list[ICD10SuggestionResponse] = Field(..., description="Suggested codes with CER")
+    total_matches: int = Field(..., description="Total codes matched")
+    coding_tips: list[str] = Field(..., description="General coding tips")
+    suggestion_time_ms: float = Field(..., description="Time taken in ms")
+    database_stats: dict = Field(..., description="Code database statistics")
+
+
+@router.post(
+    "/clinical/icd10-suggest",
+    response_model=ICD10SuggestResponse,
+    summary="Suggest ICD-10 codes with CER citations",
+    description="Suggest ICD-10-CM codes for a diagnosis with Claim-Evidence-Reasoning citations.",
+)
+async def suggest_icd10_codes(
+    request: ICD10SuggestRequest,
+) -> ICD10SuggestResponse:
+    """Suggest ICD-10-CM codes for clinical diagnoses with CER citations.
+
+    This endpoint provides ICD-10-CM code suggestions with Claim-Evidence-Reasoning
+    (CER) citations to help clinicians understand WHY each code is suggested:
+
+    - **Claim**: What code is being suggested and why
+    - **Evidence**: Clinical findings supporting this code selection
+    - **Reasoning**: Clinical logic connecting evidence to the code
+    - **Guidelines**: Relevant ICD-10 coding guidelines
+
+    Features:
+    - Text-to-code mapping with natural language understanding
+    - Synonym and alias matching (HTN->hypertension, DM->diabetes)
+    - Code hierarchy navigation for specificity
+    - Coding guidance for complex scenarios
+
+    **Important**: Code suggestions should be verified by qualified medical coders.
+
+    Args:
+        request: Diagnosis text and configuration options.
+
+    Returns:
+        ICD10SuggestResponse with CER-cited code suggestions.
+    """
+    import time
+    from app.services.icd10_suggester import get_icd10_suggester_service
+
+    start_time = time.perf_counter()
+
+    service = get_icd10_suggester_service()
+
+    result = service.suggest_codes(
+        query=request.query,
+        max_suggestions=request.max_suggestions,
+    )
+
+    suggestion_time_ms = (time.perf_counter() - start_time) * 1000
+
+    # Convert to response format with CER citations
+    suggestions = []
+    for s in result.suggestions:
+        cer_response = CERCitationResponse(
+            claim=s.cer_citation.claim if s.cer_citation else f"{s.code} may be appropriate",
+            evidence=s.cer_citation.evidence if s.cer_citation else [s.match_reason],
+            reasoning=s.cer_citation.reasoning if s.cer_citation else "Based on term matching",
+            strength=s.cer_citation.strength.value if s.cer_citation else s.confidence.value,
+            guidelines=s.cer_citation.icd10_guidelines if s.cer_citation else [],
+        )
+        suggestions.append(
+            ICD10SuggestionResponse(
+                code=s.code,
+                description=s.description,
+                confidence=s.confidence.value,
+                match_reason=s.match_reason,
+                is_billable=s.is_billable,
+                category=s.category,
+                cer_citation=cer_response,
+                more_specific_codes=s.more_specific_codes,
+                related_codes=s.related_codes,
+                coding_guidance=s.coding_guidance,
+            )
+        )
+
+    return ICD10SuggestResponse(
+        query=result.query,
+        suggestions=suggestions,
+        total_matches=result.total_matches,
+        coding_tips=result.coding_tips,
+        suggestion_time_ms=round(suggestion_time_ms, 2),
+        database_stats=service.get_stats(),
+    )
+
+
+# ============================================================================
+# CPT Code Suggestion Endpoint (with CER Framework)
+# ============================================================================
+
+
+class CPTSuggestRequest(BaseModel):
+    """Request body for CPT code suggestion."""
+
+    query: str = Field(
+        ...,
+        description="Procedure/service description (e.g., 'office visit', 'ecg')",
+    )
+    clinical_context: dict[str, str] | None = Field(
+        None,
+        description="Optional context: time_spent, mdm_complexity, new_patient, setting, diagnoses",
+    )
+    max_suggestions: int = Field(10, ge=1, le=20, description="Maximum codes to return")
+
+
+class CPTCERCitationResponse(BaseModel):
+    """Claim-Evidence-Reasoning citation for a CPT code suggestion."""
+
+    claim: str = Field(..., description="The assertion about code appropriateness")
+    evidence: list[str] = Field(..., description="Clinical documentation supporting the claim")
+    reasoning: str = Field(..., description="Explanation connecting evidence to the claim")
+    strength: str = Field(..., description="Confidence strength (high, medium, low)")
+
+
+class DocumentationChecklistItem(BaseModel):
+    """Documentation requirement checklist item."""
+
+    element: str = Field(..., description="Required documentation element")
+    present: bool | None = Field(None, description="Whether documented (null=unknown)")
+    notes: str = Field("", description="Notes about this element")
+
+
+class CPTSuggestionResponse(BaseModel):
+    """A suggested CPT code with CER citation."""
+
+    code: str = Field(..., description="CPT code")
+    description: str = Field(..., description="Code description")
+    category: str = Field(..., description="CPT category")
+    confidence: str = Field(..., description="Confidence level")
+    cer_citation: CPTCERCitationResponse = Field(..., description="CER citation")
+    work_rvu: float = Field(..., description="Work RVU value")
+    typical_time_minutes: int = Field(..., description="Typical time in minutes")
+    suggested_modifiers: list[tuple[str, str]] = Field(
+        default_factory=list, description="Suggested modifiers (code, description)"
+    )
+    documentation_checklist: list[DocumentationChecklistItem] = Field(
+        default_factory=list, description="Documentation requirements"
+    )
+    supporting_diagnoses: list[tuple[str, str]] = Field(
+        default_factory=list, description="Supporting ICD-10 codes"
+    )
+    alternative_codes: list[tuple[str, str]] = Field(
+        default_factory=list, description="Alternative codes to consider"
+    )
+    coding_notes: list[str] = Field(default_factory=list, description="Coding notes")
+
+
+class CPTSuggestResponse(BaseModel):
+    """Response from CPT code suggestion."""
+
+    query: str = Field(..., description="Original query")
+    clinical_context: dict[str, str] = Field(..., description="Clinical context used")
+    suggestions: list[CPTSuggestionResponse] = Field(..., description="Suggested codes with CER")
+    total_matches: int = Field(..., description="Total codes matched")
+    documentation_gaps: list[str] = Field(..., description="Missing documentation")
+    coding_tips: list[str] = Field(..., description="Coding tips")
+    suggestion_time_ms: float = Field(..., description="Time taken in ms")
+    database_stats: dict = Field(..., description="Code database statistics")
+
+
+@router.post(
+    "/clinical/cpt-suggest",
+    response_model=CPTSuggestResponse,
+    summary="Suggest CPT codes with CER citations",
+    description="Suggest CPT-4 codes for procedures with Claim-Evidence-Reasoning citations.",
+)
+async def suggest_cpt_codes(
+    request: CPTSuggestRequest,
+) -> CPTSuggestResponse:
+    """Suggest CPT-4 codes for medical procedures with CER citations.
+
+    This endpoint provides CPT code suggestions with Claim-Evidence-Reasoning
+    (CER) citations to help clinicians understand WHY each code is suggested:
+
+    - **Claim**: What code is being suggested for this service
+    - **Evidence**: Documentation elements supporting this code
+    - **Reasoning**: How the evidence supports the code selection
+
+    Clinical context improves suggestion accuracy:
+    - **time_spent**: Total encounter time in minutes
+    - **mdm_complexity**: Medical decision making (straightforward, low, moderate, high)
+    - **new_patient**: Whether patient is new (true/false)
+    - **setting**: Service setting (office, hospital, emergency)
+    - **diagnoses**: Relevant diagnosis codes
+
+    **Important**: CPT codes are owned by the AMA. Code suggestions should be
+    verified by qualified medical coders.
+
+    Args:
+        request: Procedure description and clinical context.
+
+    Returns:
+        CPTSuggestResponse with CER-cited code suggestions.
+    """
+    import time
+    from app.services.cpt_suggester import get_cpt_suggester_service
+
+    start_time = time.perf_counter()
+
+    service = get_cpt_suggester_service()
+
+    result = service.suggest_codes(
+        query=request.query,
+        clinical_context=request.clinical_context,
+        max_suggestions=request.max_suggestions,
+    )
+
+    suggestion_time_ms = (time.perf_counter() - start_time) * 1000
+
+    # Convert to response format with CER citations
+    suggestions = []
+    for s in result.suggestions:
+        cer_response = CPTCERCitationResponse(
+            claim=s.cer_citation.claim,
+            evidence=s.cer_citation.evidence,
+            reasoning=s.cer_citation.reasoning,
+            strength=s.cer_citation.strength.value,
+        )
+        doc_checklist = [
+            DocumentationChecklistItem(
+                element=d.element,
+                present=d.present,
+                notes=d.notes,
+            )
+            for d in s.documentation_checklist
+        ]
+        suggestions.append(
+            CPTSuggestionResponse(
+                code=s.code,
+                description=s.description,
+                category=s.category,
+                confidence=s.confidence.value,
+                cer_citation=cer_response,
+                work_rvu=s.work_rvu,
+                typical_time_minutes=s.typical_time_minutes,
+                suggested_modifiers=s.suggested_modifiers,
+                documentation_checklist=doc_checklist,
+                supporting_diagnoses=s.supporting_diagnoses,
+                alternative_codes=s.alternative_codes,
+                coding_notes=s.coding_notes,
+            )
+        )
+
+    return CPTSuggestResponse(
+        query=result.query,
+        clinical_context=result.clinical_context,
+        suggestions=suggestions,
+        total_matches=result.total_matches,
+        documentation_gaps=result.documentation_gaps,
+        coding_tips=result.coding_tips,
+        suggestion_time_ms=round(suggestion_time_ms, 2),
+        database_stats=service.get_stats(),
+    )
+
+
+# ============================================================================
+# Billing Optimization Endpoint
+# ============================================================================
+
+
+class BillingOptimizationRequest(BaseModel):
+    """Request for billing optimization analysis."""
+
+    cpt_codes: list[str] = Field(..., description="CPT codes billed")
+    icd10_codes: list[str] = Field(..., description="ICD-10 diagnosis codes")
+    modifiers: list[tuple[str, str]] | None = Field(
+        None, description="Modifiers as (code, modifier) pairs"
+    )
+    setting: str | None = Field(None, description="Clinical setting (office, hospital, ed)")
+    patient_type: str | None = Field(None, description="new or established")
+    time_spent: int | None = Field(None, description="Time spent in minutes")
+    mdm_complexity: str | None = Field(
+        None, description="MDM complexity (straightforward, low, moderate, high)"
+    )
+    diagnoses: list[str] | None = Field(None, description="Clinical findings/diagnoses")
+
+
+class BillingCERResponse(BaseModel):
+    """CER citation for billing finding."""
+
+    claim: str = Field(..., description="The billing assertion")
+    evidence: list[str] = Field(..., description="Supporting evidence")
+    reasoning: str = Field(..., description="Clinical reasoning")
+    strength: str = Field(..., description="Confidence level")
+    regulatory_basis: list[str] = Field(default_factory=list, description="Regulatory references")
+
+
+class BillingFindingResponse(BaseModel):
+    """Single billing optimization finding."""
+
+    category: str = Field(..., description="Finding category")
+    title: str = Field(..., description="Finding title")
+    description: str = Field(..., description="Detailed description")
+    severity: str = Field(..., description="Severity level")
+    current_code: str | None = Field(None, description="Current code if applicable")
+    recommended_code: str | None = Field(None, description="Recommended code if applicable")
+    revenue_impact: float | None = Field(None, description="Estimated revenue impact")
+    action_required: str = Field(..., description="Required action")
+    cer_citation: BillingCERResponse = Field(..., description="CER citation")
+
+
+class BillingOptimizationResponse(BaseModel):
+    """Response for billing optimization analysis."""
+
+    findings: list[BillingFindingResponse] = Field(..., description="Optimization findings")
+    total_findings: int = Field(..., description="Total number of findings")
+    by_category: dict[str, int] = Field(..., description="Findings by category")
+    by_severity: dict[str, int] = Field(..., description="Findings by severity")
+    estimated_current_rvu: float = Field(..., description="Current RVU estimate")
+    estimated_optimized_rvu: float = Field(..., description="Optimized RVU estimate")
+    potential_revenue_increase: float = Field(..., description="Potential revenue increase")
+    compliance_score: int = Field(..., description="Compliance score 0-100")
+    priority_actions: list[str] = Field(..., description="Priority actions to take")
+    overall_assessment: str = Field(..., description="Overall assessment summary")
+    analysis_time_ms: float = Field(..., description="Analysis time in milliseconds")
+
+
+@router.post(
+    "/clinical/billing-optimize",
+    response_model=BillingOptimizationResponse,
+    tags=["clinical-decision-support"],
+    summary="Analyze billing optimization opportunities",
+)
+async def analyze_billing_optimization(
+    request: BillingOptimizationRequest,
+) -> BillingOptimizationResponse:
+    """
+    Analyze an encounter for billing optimization opportunities.
+
+    Checks for:
+    - E/M upcoding opportunities based on time or MDM
+    - Missed billable services
+    - CCI bundling compliance issues
+    - Medical necessity gaps
+    - Missing modifiers
+    - Documentation gaps
+
+    All findings include CER (Claim-Evidence-Reasoning) citations.
+    """
+    import time
+    from app.services.billing_optimizer import (
+        BillingOptimizationService,
+        EncounterCodes,
+        EncounterContext,
+    )
+
+    start_time = time.time()
+
+    service = BillingOptimizationService()
+
+    codes = EncounterCodes(
+        cpt_codes=request.cpt_codes,
+        icd10_codes=request.icd10_codes,
+        modifiers=request.modifiers or [],
+    )
+
+    context = EncounterContext(
+        setting=request.setting,
+        patient_type=request.patient_type,
+        time_spent=request.time_spent,
+        mdm_complexity=request.mdm_complexity,
+        diagnoses=request.diagnoses or [],
+    )
+
+    result = service.analyze_encounter(codes, context)
+
+    analysis_time_ms = (time.time() - start_time) * 1000
+
+    findings = []
+    for f in result.findings:
+        cer_response = BillingCERResponse(
+            claim=f.cer_citation.claim,
+            evidence=f.cer_citation.evidence,
+            reasoning=f.cer_citation.reasoning,
+            strength=f.cer_citation.strength.value,
+            regulatory_basis=f.cer_citation.regulatory_basis,
+        )
+        findings.append(
+            BillingFindingResponse(
+                category=f.category.value,
+                title=f.title,
+                description=f.description,
+                severity=f.severity.value,
+                current_code=f.current_code,
+                recommended_code=f.recommended_code,
+                revenue_impact=f.revenue_impact,
+                action_required=f.action_required,
+                cer_citation=cer_response,
+            )
+        )
+
+    return BillingOptimizationResponse(
+        findings=findings,
+        total_findings=result.total_findings,
+        by_category=result.by_category,  # Already string keys
+        by_severity=result.by_severity,  # Already string keys
+        estimated_current_rvu=result.estimated_current_rvu,
+        estimated_optimized_rvu=result.estimated_optimized_rvu,
+        potential_revenue_increase=result.potential_revenue_increase,
+        compliance_score=result.compliance_score,
+        priority_actions=result.priority_actions,
+        overall_assessment=result.overall_assessment,
+        analysis_time_ms=round(analysis_time_ms, 2),
+    )
+
+
+# ============================================================================
+# Clinical Summarization Endpoints
+# ============================================================================
+
+
+class PatientFactRequest(BaseModel):
+    """A clinical fact for summarization."""
+
+    fact_type: str = Field(..., description="Type: condition, drug, measurement, procedure, observation")
+    label: str = Field(..., description="Fact label/name")
+    value: str | None = Field(None, description="Value if applicable")
+    unit: str | None = Field(None, description="Unit if applicable")
+    assertion: str = Field("present", description="present, absent, possible")
+    temporality: str = Field("current", description="current, historical, future")
+    icd10_code: str | None = Field(None, description="ICD-10 code")
+    omop_concept_id: int | None = Field(None, description="OMOP concept ID")
+    confidence: float = Field(1.0, description="Confidence score 0-1")
+
+
+class SummarizeRequest(BaseModel):
+    """Request for clinical summarization."""
+
+    patient_id: str = Field(..., description="Patient identifier")
+    facts: list[PatientFactRequest] = Field(..., description="Clinical facts to summarize")
+    summary_type: str = Field("standard", description="brief, standard, detailed, discharge, handoff")
+
+
+class SectionSummaryResponse(BaseModel):
+    """A section summary."""
+
+    title: str
+    content: str
+    bullet_points: list[str] = []
+    key_findings: list[str] = []
+
+
+class ClinicalSummaryResponse(BaseModel):
+    """Clinical summary response."""
+
+    patient_id: str
+    summary_type: str
+    one_liner: str
+    sections: list[SectionSummaryResponse]
+    problem_count: int
+    medication_count: int
+    critical_findings: list[str]
+    confidence_score: float
+    generated_at: str
+
+
+@router.post(
+    "/clinical/summarize",
+    response_model=ClinicalSummaryResponse,
+    tags=["clinical-decision-support"],
+    summary="Generate clinical summary",
+)
+async def generate_clinical_summary(
+    request: SummarizeRequest,
+) -> ClinicalSummaryResponse:
+    """Generate a clinical summary from patient facts."""
+    from app.services.clinical_summarizer import (
+        ClinicalSummarizerService,
+        PatientFact,
+        SummaryType,
+    )
+
+    service = ClinicalSummarizerService()
+
+    facts = [
+        PatientFact(
+            fact_type=f.fact_type,
+            label=f.label,
+            value=f.value,
+            unit=f.unit,
+            assertion=f.assertion,
+            temporality=f.temporality,
+            icd10_code=f.icd10_code,
+            omop_concept_id=f.omop_concept_id,
+            confidence=f.confidence,
+        )
+        for f in request.facts
+    ]
+
+    summary_type_map = {
+        "brief": SummaryType.BRIEF,
+        "standard": SummaryType.STANDARD,
+        "detailed": SummaryType.DETAILED,
+        "discharge": SummaryType.DISCHARGE,
+        "handoff": SummaryType.HANDOFF,
+    }
+
+    result = service.summarize(
+        request.patient_id,
+        facts,
+        summary_type_map.get(request.summary_type, SummaryType.STANDARD),
+    )
+
+    return ClinicalSummaryResponse(
+        patient_id=result.patient_id,
+        summary_type=result.summary_type.value,
+        one_liner=result.one_liner,
+        sections=[
+            SectionSummaryResponse(
+                title=s.title,
+                content=s.content,
+                bullet_points=s.bullet_points,
+                key_findings=s.key_findings,
+            )
+            for s in result.sections
+        ],
+        problem_count=result.active_problem_count,
+        medication_count=len(result.medications),
+        critical_findings=result.critical_findings,
+        confidence_score=result.confidence_score,
+        generated_at=result.generated_at,
+    )
+
+
+# ============================================================================
+# Semantic Search & QA Endpoints
+# ============================================================================
+
+
+class SearchRequest(BaseModel):
+    """Request for semantic search."""
+
+    query: str = Field(..., description="Search query")
+    patient_id: str | None = Field(None, description="Filter by patient")
+    search_type: str = Field("hybrid", description="keyword, semantic, hybrid")
+    max_results: int = Field(10, description="Maximum results")
+
+
+class SearchResultResponse(BaseModel):
+    """A search result."""
+
+    document_id: str
+    content: str
+    score: float
+    highlights: list[str] = []
+
+
+class SearchResponse(BaseModel):
+    """Search response."""
+
+    query: str
+    search_type: str
+    results: list[SearchResultResponse]
+    total_results: int
+    search_time_ms: float
+    suggestions: list[str] = []
+
+
+class QARequest(BaseModel):
+    """Request for question answering."""
+
+    question: str = Field(..., description="Question to answer")
+    patient_id: str | None = Field(None, description="Patient context")
+    context: str | None = Field(None, description="Additional context")
+
+
+class AnswerResponse(BaseModel):
+    """Answer with evidence."""
+
+    text: str
+    confidence: float
+    evidence: list[str]
+    source_documents: list[str]
+
+
+class QAResponse(BaseModel):
+    """QA response."""
+
+    question: str
+    question_type: str
+    answer: AnswerResponse
+    related_concepts: list[str]
+    follow_up_questions: list[str]
+    response_time_ms: float
+
+
+@router.post(
+    "/search/semantic",
+    response_model=SearchResponse,
+    tags=["search"],
+    summary="Semantic search over clinical notes",
+)
+async def semantic_search(
+    request: SearchRequest,
+) -> SearchResponse:
+    """Perform semantic search over indexed clinical notes."""
+    from app.services.semantic_qa import SemanticQAService, SearchType
+
+    service = SemanticQAService()
+
+    search_type_map = {
+        "keyword": SearchType.KEYWORD,
+        "semantic": SearchType.SEMANTIC,
+        "hybrid": SearchType.HYBRID,
+    }
+
+    result = service.search(
+        request.query,
+        search_type_map.get(request.search_type, SearchType.HYBRID),
+        patient_id=request.patient_id,
+        max_results=request.max_results,
+    )
+
+    return SearchResponse(
+        query=result.query,
+        search_type=result.search_type.value,
+        results=[
+            SearchResultResponse(
+                document_id=r.document_id,
+                content=r.content,
+                score=r.score,
+                highlights=r.highlights,
+            )
+            for r in result.results
+        ],
+        total_results=result.total_results,
+        search_time_ms=result.search_time_ms,
+        suggestions=result.suggestions,
+    )
+
+
+@router.post(
+    "/search/qa",
+    response_model=QAResponse,
+    tags=["search"],
+    summary="Answer clinical questions",
+)
+async def answer_question(
+    request: QARequest,
+) -> QAResponse:
+    """Answer a clinical question using indexed documents."""
+    from app.services.semantic_qa import SemanticQAService
+
+    service = SemanticQAService()
+
+    result = service.answer_question(
+        request.question,
+        patient_id=request.patient_id,
+        context=request.context,
+    )
+
+    return QAResponse(
+        question=result.question,
+        question_type=result.question_type.value,
+        answer=AnswerResponse(
+            text=result.answer.text,
+            confidence=result.answer.confidence,
+            evidence=result.answer.evidence,
+            source_documents=result.answer.source_documents,
+        ),
+        related_concepts=result.related_concepts,
+        follow_up_questions=result.follow_up_questions,
+        response_time_ms=result.response_time_ms,
+    )
+
+
+# ============================================================================
+# FHIR Export Endpoints
+# ============================================================================
+
+
+class FHIRExportRequest(BaseModel):
+    """Request for FHIR export."""
+
+    patient_id: str = Field(..., description="Patient identifier")
+    facts: list[PatientFactRequest] = Field(..., description="Facts to export")
+    include_patient: bool = Field(True, description="Include Patient resource")
+
+
+class FHIRBundleResponse(BaseModel):
+    """FHIR Bundle response."""
+
+    bundle_id: str
+    total_resources: int
+    resource_types: list[str]
+    fhir_json: str
+
+
+@router.post(
+    "/export/fhir",
+    response_model=FHIRBundleResponse,
+    tags=["export"],
+    summary="Export facts to FHIR R4 Bundle",
+)
+async def export_fhir(
+    request: FHIRExportRequest,
+) -> FHIRBundleResponse:
+    """Export clinical facts to FHIR R4 Bundle format."""
+    from app.services.fhir_exporter import FHIRExporterService, ClinicalFact
+
+    service = FHIRExporterService()
+
+    facts = [
+        ClinicalFact(
+            fact_type=f.fact_type,
+            label=f.label,
+            value=f.value,
+            unit=f.unit,
+            icd10_code=f.icd10_code,
+            omop_concept_id=f.omop_concept_id,
+            assertion=f.assertion,
+            temporality=f.temporality,
+            patient_id=request.patient_id,
+            confidence=f.confidence,
+        )
+        for f in request.facts
+    ]
+
+    bundle = service.export_facts(
+        facts,
+        patient_id=request.patient_id,
+        include_patient=request.include_patient,
+    )
+
+    return FHIRBundleResponse(
+        bundle_id=bundle.bundle_id,
+        total_resources=bundle.total,
+        resource_types=[e.resource_type.value for e in bundle.entries],
+        fhir_json=service.to_json(bundle),
+    )
+
+
+# ============================================================================
+# Report Generation Endpoints
+# ============================================================================
+
+
+class ReportSectionRequest(BaseModel):
+    """A report section."""
+
+    title: str
+    content: str = ""
+    bullet_points: list[str] = []
+    table_data: list[dict] | None = None
+
+
+class ReportRequest(BaseModel):
+    """Request for report generation."""
+
+    title: str = Field(..., description="Report title")
+    patient_id: str | None = Field(None, description="Patient ID")
+    sections: list[ReportSectionRequest] = Field(..., description="Report sections")
+    format: str = Field("html", description="Output format: html, markdown, json, pdf")
+    template: str = Field("clinical_summary", description="Report template")
+
+
+class GeneratedReportResponse(BaseModel):
+    """Generated report response."""
+
+    report_id: str
+    format: str
+    filename: str
+    content: str
+    content_type: str
+    size_bytes: int
+
+
+@router.post(
+    "/reports/generate",
+    response_model=GeneratedReportResponse,
+    tags=["reports"],
+    summary="Generate clinical report",
+)
+async def generate_report(
+    request: ReportRequest,
+) -> GeneratedReportResponse:
+    """Generate a clinical report in specified format."""
+    from app.services.report_generator import (
+        ReportGeneratorService,
+        ReportData,
+        ReportSection,
+        ReportFormat,
+        ReportTemplate,
+    )
+
+    service = ReportGeneratorService()
+
+    format_map = {
+        "html": ReportFormat.HTML,
+        "markdown": ReportFormat.MARKDOWN,
+        "json": ReportFormat.JSON,
+        "pdf": ReportFormat.PDF,
+    }
+
+    template_map = {
+        "clinical_summary": ReportTemplate.CLINICAL_SUMMARY,
+        "discharge_summary": ReportTemplate.DISCHARGE_SUMMARY,
+        "problem_list": ReportTemplate.PROBLEM_LIST,
+        "nlp_extraction": ReportTemplate.NLP_EXTRACTION_REPORT,
+    }
+
+    data = ReportData(
+        title=request.title,
+        patient_id=request.patient_id,
+        sections=[
+            ReportSection(
+                title=s.title,
+                content=s.content,
+                bullet_points=s.bullet_points,
+                table_data=s.table_data,
+            )
+            for s in request.sections
+        ],
+    )
+
+    report = service.generate_report(
+        data,
+        template_map.get(request.template, ReportTemplate.CLINICAL_SUMMARY),
+        format_map.get(request.format, ReportFormat.HTML),
+    )
+
+    content = report.content
+    if isinstance(content, bytes):
+        import base64
+        content = base64.b64encode(content).decode("utf-8")
+
+    return GeneratedReportResponse(
+        report_id=report.report_id,
+        format=report.format.value,
+        filename=report.filename,
+        content=content,
+        content_type=report.content_type,
+        size_bytes=report.size_bytes,
+    )
+
+
+# ============================================================================
+# Quality Metrics Dashboard Endpoints
+# ============================================================================
+
+
+class DashboardResponse(BaseModel):
+    """Quality metrics dashboard data."""
+
+    total_documents_processed: int
+    total_extractions: int
+    avg_processing_time_ms: float
+    overall_confidence: float
+    error_rate: float
+    entity_distribution: dict[str, int]
+    confidence_distribution: dict[str, int]
+    top_errors: list[dict]
+    recent_documents: list[dict]
+
+
+@router.get(
+    "/metrics/dashboard",
+    response_model=DashboardResponse,
+    tags=["metrics"],
+    summary="Get quality metrics dashboard data",
+)
+async def get_dashboard_metrics(
+    time_window: str = "day",
+) -> DashboardResponse:
+    """Get quality metrics dashboard data."""
+    from app.services.quality_metrics import QualityMetricsService, TimeWindow
+
+    service = QualityMetricsService()
+
+    window_map = {
+        "hour": TimeWindow.HOUR,
+        "day": TimeWindow.DAY,
+        "week": TimeWindow.WEEK,
+        "month": TimeWindow.MONTH,
+    }
+
+    data = service.get_dashboard_data(
+        window_map.get(time_window, TimeWindow.DAY)
+    )
+
+    return DashboardResponse(
+        total_documents_processed=data.total_documents_processed,
+        total_extractions=data.total_extractions,
+        avg_processing_time_ms=data.avg_processing_time_ms,
+        overall_confidence=data.overall_confidence,
+        error_rate=data.error_rate,
+        entity_distribution=data.entity_distribution,
+        confidence_distribution=data.confidence_distribution,
+        top_errors=data.top_errors,
+        recent_documents=data.recent_documents,
+    )
+
+
+# ============================================================================
+# Batch Processing Endpoints
+# ============================================================================
+
+
+class BatchDocumentRequest(BaseModel):
+    """A document for batch processing."""
+
+    filename: str
+    content: str
+    content_type: str = "text/plain"
+
+
+class BatchCreateRequest(BaseModel):
+    """Request to create a batch job."""
+
+    documents: list[BatchDocumentRequest]
+    patient_id: str | None = None
+
+
+class BatchProgressResponse(BaseModel):
+    """Batch progress response."""
+
+    job_id: str
+    status: str
+    progress_percent: float
+    processed: int
+    total: int
+    estimated_remaining_seconds: float | None = None
+
+
+class BatchStatusResponse(BaseModel):
+    """Batch status response."""
+
+    job_id: str
+    status: str
+    total_documents: int
+    processed_documents: int
+    successful_documents: int
+    failed_documents: int
+    progress_percent: float
+    created_at: str
+    completed_at: str | None = None
+    summary: dict | None = None
+    errors: list[str] = []
+
+
+@router.post(
+    "/batch/create",
+    response_model=BatchStatusResponse,
+    tags=["batch"],
+    summary="Create batch processing job",
+)
+async def create_batch_job(
+    request: BatchCreateRequest,
+) -> BatchStatusResponse:
+    """Create a new batch processing job."""
+    from app.services.batch_processor import BatchProcessorService
+
+    service = BatchProcessorService()
+
+    documents = [
+        {
+            "filename": d.filename,
+            "content": d.content,
+            "content_type": d.content_type,
+        }
+        for d in request.documents
+    ]
+
+    job = service.create_batch(documents, patient_id=request.patient_id)
+
+    return BatchStatusResponse(
+        job_id=job.job_id,
+        status=job.status.value,
+        total_documents=job.total_documents,
+        processed_documents=job.processed_documents,
+        successful_documents=job.successful_documents,
+        failed_documents=job.failed_documents,
+        progress_percent=job.progress_percent,
+        created_at=job.created_at,
+    )
+
+
+@router.get(
+    "/batch/{job_id}/status",
+    response_model=BatchStatusResponse,
+    tags=["batch"],
+    summary="Get batch job status",
+)
+async def get_batch_status(
+    job_id: str,
+) -> BatchStatusResponse:
+    """Get status of a batch processing job."""
+    from app.services.batch_processor import BatchProcessorService
+    from fastapi import HTTPException
+
+    service = BatchProcessorService()
+    job = service.get_batch_status(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Batch job not found")
+
+    return BatchStatusResponse(
+        job_id=job.job_id,
+        status=job.status.value,
+        total_documents=job.total_documents,
+        processed_documents=job.processed_documents,
+        successful_documents=job.successful_documents,
+        failed_documents=job.failed_documents,
+        progress_percent=job.progress_percent,
+        created_at=job.created_at,
+        completed_at=job.completed_at,
+        summary=job.summary if job.summary else None,
+        errors=job.errors,
+    )
+
+
+@router.get(
+    "/batch/{job_id}/progress",
+    response_model=BatchProgressResponse,
+    tags=["batch"],
+    summary="Get batch job progress",
+)
+async def get_batch_progress(
+    job_id: str,
+) -> BatchProgressResponse:
+    """Get progress of a batch processing job."""
+    from app.services.batch_processor import BatchProcessorService
+    from fastapi import HTTPException
+
+    service = BatchProcessorService()
+    progress = service.get_batch_progress(job_id)
+
+    if not progress:
+        raise HTTPException(status_code=404, detail="Batch job not found")
+
+    return BatchProgressResponse(
+        job_id=progress.job_id,
+        status=progress.status.value,
+        progress_percent=progress.progress_percent,
+        processed=progress.processed,
+        total=progress.total,
+        estimated_remaining_seconds=progress.estimated_remaining_seconds,
+    )

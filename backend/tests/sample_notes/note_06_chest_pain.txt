@@ -1,0 +1,86 @@
+FACILITY: Example Medical Center (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: ED Provider Note
+DATE/TIME: 2026-01-20 21:15
+AUTHOR: Casey Example, MD (Emergency Medicine)
+
+PATIENT: TEST, JULIET
+MRN: TEST20012
+DOB: 1989-11-22
+AGE/SEX: 36-year-old female
+
+CHIEF COMPLAINT
+Chest pain.
+
+HISTORY OF PRESENT ILLNESS
+36F with no significant cardiac history presents with left-sided chest pain that started yesterday after moving furniture. Pain is sharp, 5/10, localized to left anterior chest wall, worse with deep inspiration and palpation, improved with ibuprofen. No radiation to arm or jaw. No associated dyspnea at rest. Denies diaphoresis, nausea, or palpitations. No recent illness. No calf pain or swelling. Not on oral contraceptives. No recent travel or immobilization.
+
+Patient is anxious about chest pain given family history (father had MI at age 58).
+
+REVIEW OF SYSTEMS
+Positive: chest pain (pleuritic, reproducible with palpation).
+Negative: dyspnea at rest, diaphoresis, nausea, vomiting, palpitations, syncope, leg pain/swelling, fever, cough.
+
+PAST MEDICAL HISTORY
+- Generalized anxiety disorder
+- Migraine headaches
+
+MEDICATIONS
+- Sertraline 100 mg daily
+- Sumatriptan 50 mg PRN migraine
+
+ALLERGIES
+- NKDA
+
+SOCIAL HISTORY
+- Non-smoker
+- Occasional alcohol (1-2 drinks/week)
+- No illicit drug use
+- Works as graphic designer (desk job)
+
+FAMILY HISTORY
+- Father: MI at 58 (still alive)
+- Mother: Healthy
+- No sudden cardiac death
+
+VITAL SIGNS
+21:00  BP 122/78  HR 76  RR 16  Temp 36.9 C  SpO2 99% RA
+
+PHYSICAL EXAM
+General: Alert, comfortable, mildly anxious.
+Cardiac: Regular rate and rhythm, no murmurs, rubs, or gallops.
+Lungs: Clear to auscultation bilaterally. No wheezes or crackles.
+Chest wall: Tenderness to palpation at left 4th-5th costochondral junction. Pain reproduced with palpation.
+Extremities: No edema. Calves non-tender, symmetric.
+
+ED COURSE
+Low-risk chest pain in young female with classic musculoskeletal features: recent exertion, pleuritic, reproducible with palpation, localized. No cardiac risk factors. Very low pretest probability for ACS or PE.
+
+ECG obtained for documentation given chief complaint - normal sinus rhythm, no ST changes.
+
+Troponin obtained per protocol - negative.
+
+RESULTS
+ECG: Normal sinus rhythm, rate 74. Normal axis. No ST-T wave changes. No Q waves.
+
+Troponin I: <0.01 ng/mL (normal)
+
+CXR: Clear lungs. Normal cardiac silhouette. No rib fractures identified.
+
+ASSESSMENT
+1) Musculoskeletal chest pain (costochondritis).
+2) Anxiety.
+
+PLAN
+- Reassurance provided regarding low-risk nature of presentation.
+- Continue NSAIDs (ibuprofen 400 mg TID with food) for 5-7 days.
+- Warm compresses to affected area.
+- Follow up with PCP if symptoms persist >2 weeks.
+- Return precautions: worsening pain, dyspnea, diaphoresis, radiation to arm/jaw.
+
+DISPOSITION
+Discharge home.
+Condition: Good.
+
+SIGNATURE
+Electronically signed by: Casey Example, MD
+Date/Time Signed: 2026-01-20 22:03

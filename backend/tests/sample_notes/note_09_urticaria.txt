@@ -1,0 +1,74 @@
+FACILITY: Example Urgent Care (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: Urgent Care Visit Note
+DATE/TIME: 2026-01-28 15:45
+AUTHOR: Jamie Example, PA-C
+
+PATIENT: TEST, MIKE
+MRN: TEST20015
+DOB: 1995-02-18
+AGE/SEX: 30-year-old female
+
+CHIEF COMPLAINT
+Rash and itching after eating shrimp.
+
+HISTORY OF PRESENT ILLNESS
+30F presents with generalized pruritic rash that developed approximately 2 hours ago, about 30 minutes after eating shrimp at a restaurant. Patient reports this is the first time she has had a reaction to shellfish. Rash is raised, red, and intensely itchy. She has taken diphenhydramine 25 mg PO at home with minimal relief.
+
+Denies throat tightness, difficulty breathing, difficulty swallowing, tongue swelling, or voice changes. Denies wheezing. Denies dizziness or lightheadedness. Denies nausea, vomiting, or abdominal cramping. No prior history of food allergies or anaphylaxis.
+
+REVIEW OF SYSTEMS
+Positive: pruritus, raised rash.
+Negative: throat tightness, dyspnea, wheezing, dysphagia, voice changes, tongue swelling, lip swelling, dizziness, syncope, nausea, vomiting, abdominal pain.
+
+PAST MEDICAL HISTORY
+- Seasonal allergies (tree pollen)
+- Eczema (childhood, resolved)
+
+MEDICATIONS
+- Loratadine 10 mg daily PRN allergies
+
+ALLERGIES
+- No known drug allergies
+- NEW: Shellfish (this visit)
+
+SOCIAL HISTORY
+- Non-smoker
+- Occasional alcohol
+- Works as accountant
+
+VITAL SIGNS
+15:40  BP 118/72  HR 88  RR 16  Temp 37.0 C  SpO2 99% RA
+
+PHYSICAL EXAM
+General: Alert, uncomfortable due to itching, no respiratory distress.
+HEENT: No lip or tongue swelling. No uvular edema. Oropharynx clear, no erythema.
+Neck: No stridor. No lymphadenopathy.
+Lungs: Clear to auscultation bilaterally. No wheezes, no stridor.
+Cardiovascular: Regular rate and rhythm.
+Skin: Diffuse urticarial rash with raised, erythematous, blanching wheals varying in size from 1-5 cm distributed over trunk, arms, and legs. Some wheals have central clearing. No angioedema. No vesicles or bullae.
+Extremities: No edema.
+
+CLINICAL IMPRESSION
+Acute urticaria secondary to IgE-mediated shellfish allergy. No signs of anaphylaxis (no respiratory compromise, no hypotension, no angioedema, no GI symptoms).
+
+ASSESSMENT
+1) Acute urticaria - allergic reaction to shellfish.
+2) New shellfish allergy.
+
+PLAN
+- Diphenhydramine 50 mg IM given in clinic for faster relief.
+- Prednisone 50 mg PO x1 dose given.
+- Prescriptions:
+  * Prednisone 40 mg daily x 3 days
+  * Cetirizine 10 mg daily x 7 days (longer-acting antihistamine)
+  * EpiPen 0.3 mg auto-injector x 2 - patient educated on use for future reactions
+- Strict shellfish avoidance counseled (shrimp, crab, lobster, crayfish, etc.)
+- Referral to allergist for formal testing and management.
+- Return precautions: throat tightness, difficulty breathing, lip/tongue swelling, dizziness, vomiting → use EpiPen and call 911.
+
+DISPOSITION
+Discharge home in stable condition after observation x 30 minutes (no progression of symptoms).
+
+SIGNATURE
+Electronically signed by: Jamie Example, PA-C
+Date/Time Signed: 2026-01-28 16:32

@@ -1,0 +1,114 @@
+{
+  "timestamp": "2026-01-16T09:17:15.061318",
+  "documents_tested": 10,
+  "nlp_pipeline_metrics": {
+    "true_positives": 369,
+    "false_positives": 198,
+    "false_negatives": 51,
+    "precision": 0.6508,
+    "recall": 0.8786,
+    "f1_score": 0.7477,
+    "avg_latency_ms": 4.61,
+    "p95_latency_ms": 8.9,
+    "total_tokens": 0,
+    "consistency_score": 0.0
+  },
+  "llm_only_metrics": {
+    "true_positives": 279,
+    "false_positives": 86,
+    "false_negatives": 141,
+    "precision": 0.7644,
+    "recall": 0.6643,
+    "f1_score": 0.7108,
+    "avg_latency_ms": 1661.92,
+    "p95_latency_ms": 1959.77,
+    "total_tokens": 46392,
+    "consistency_score": 0.0
+  },
+  "accuracy_winner": "nlp_pipeline",
+  "latency_winner": "nlp_pipeline",
+  "cost_winner": "nlp_pipeline",
+  "per_document_results": [
+    {
+      "document_id": "note_10_ct_chest",
+      "nlp_avg_latency_ms": 3.1642913818359375,
+      "llm_avg_latency_ms": 1769.141674041748,
+      "nlp_entities": 4,
+      "llm_entities": 3,
+      "llm_tokens": 1194
+    },
+    {
+      "document_id": "note_02_dka_discharge",
+      "nlp_avg_latency_ms": 2.259969711303711,
+      "llm_avg_latency_ms": 1579.7065099080403,
+      "nlp_entities": 15,
+      "llm_entities": 11,
+      "llm_tokens": 814
+    },
+    {
+      "document_id": "note_04_telehealth_htn",
+      "nlp_avg_latency_ms": 2.3651123046875,
+      "llm_avg_latency_ms": 1748.4688758850098,
+      "nlp_entities": 6,
+      "llm_entities": 5,
+      "llm_tokens": 849
+    },
+    {
+      "document_id": "note_08_rlq_pain",
+      "nlp_avg_latency_ms": 8.900165557861328,
+      "llm_avg_latency_ms": 1630.6366125742595,
+      "nlp_entities": 17,
+      "llm_entities": 8,
+      "llm_tokens": 1676
+    },
+    {
+      "document_id": "note_01_diabetes_htn",
+      "nlp_avg_latency_ms": 2.209901809692383,
+      "llm_avg_latency_ms": 1672.5958188374836,
+      "nlp_entities": 18,
+      "llm_entities": 14,
+      "llm_tokens": 1001
+    },
+    {
+      "document_id": "note_03_hf_ckd_ed",
+      "nlp_avg_latency_ms": 8.675098419189453,
+      "llm_avg_latency_ms": 1312.1236165364583,
+      "nlp_entities": 39,
+      "llm_entities": 25,
+      "llm_tokens": 3030
+    },
+    {
+      "document_id": "note_09_urticaria",
+      "nlp_avg_latency_ms": 4.165172576904297,
+      "llm_avg_latency_ms": 1664.1201972961426,
+      "nlp_entities": 17,
+      "llm_entities": 13,
+      "llm_tokens": 1538
+    },
+    {
+      "document_id": "note_06_chest_pain",
+      "nlp_avg_latency_ms": 3.9010047912597656,
+      "llm_avg_latency_ms": 1871.7867533365886,
+      "nlp_entities": 17,
+      "llm_entities": 10,
+      "llm_tokens": 1475
+    },
+    {
+      "document_id": "note_07_tia_stroke_alert",
+      "nlp_avg_latency_ms": 5.434751510620117,
+      "llm_avg_latency_ms": 1809.5809618632,
+      "nlp_entities": 24,
+      "llm_entities": 16,
+      "llm_tokens": 2165
+    },
+    {
+      "document_id": "note_05_copd_exacerbation",
+      "nlp_avg_latency_ms": 5.0716400146484375,
+      "llm_avg_latency_ms": 1561.00328763326,
+      "nlp_entities": 32,
+      "llm_entities": 18,
+      "llm_tokens": 1722
+    }
+  ],
+  "by_entity_type": {}
+}

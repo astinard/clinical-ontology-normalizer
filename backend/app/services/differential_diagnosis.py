@@ -29,6 +29,34 @@ class DiagnosisUrgency(Enum):
     ROUTINE = "routine"  # Can be evaluated electively
 
 
+class CERStrength(Enum):
+    """Strength of the CER citation."""
+
+    STRONG = "strong"  # High clinical evidence supports this diagnosis
+    MODERATE = "moderate"  # Good clinical evidence, consider alternatives
+    WEAK = "weak"  # Limited evidence, needs further workup
+
+
+@dataclass
+class DiagnosisCERCitation:
+    """Claim-Evidence-Reasoning citation for a differential diagnosis.
+
+    This framework helps clinicians understand WHY a diagnosis is suggested:
+    - Claim: What diagnosis is being considered and its probability
+    - Evidence: Clinical findings supporting and opposing this diagnosis
+    - Reasoning: Clinical logic connecting findings to the diagnosis
+    """
+
+    claim: str  # The diagnostic assertion
+    supporting_evidence: list[str]  # Findings that support this diagnosis
+    opposing_evidence: list[str]  # Findings that argue against
+    reasoning: str  # Clinical reasoning connecting evidence to claim
+    strength: CERStrength  # How strong is this CER
+    clinical_pearls: list[str] = field(default_factory=list)  # Clinical teaching points
+    diagnostic_criteria: list[str] = field(default_factory=list)  # Formal criteria if applicable
+    must_rule_out: list[str] = field(default_factory=list)  # Critical diagnoses to exclude
+
+
 class ClinicalDomain(Enum):
     """Clinical domains for categorizing diagnoses."""
 
@@ -48,7 +76,7 @@ class ClinicalDomain(Enum):
 
 @dataclass
 class DiagnosisCandidate:
-    """A candidate diagnosis in the differential."""
+    """A candidate diagnosis in the differential with CER citation."""
 
     name: str
     omop_concept_id: int | None
@@ -62,6 +90,9 @@ class DiagnosisCandidate:
     recommended_workup: list[str]  # Suggested diagnostic tests
     key_features: list[str]  # Classic presentation features
     prevalence_modifier: str = "average"  # low, average, high for demographics
+
+    # CER Framework for clinical reasoning transparency
+    cer_citation: DiagnosisCERCitation | None = None
 
 
 @dataclass
@@ -818,6 +849,17 @@ class DifferentialDiagnosisService:
                 elif abs(age - (age_min + age_max) / 2) > 40:
                     prevalence_mod = "low"
 
+            # Build CER citation for this diagnosis
+            cer_citation = self._build_diagnosis_cer(
+                dx=dx,
+                supporting=data["supporting"],
+                opposing=opposing[:5],
+                prob_score=prob_score,
+                classic_count=data["classic_count"],
+                age=age,
+                gender=gender,
+            )
+
             candidate = DiagnosisCandidate(
                 name=dx.name,
                 omop_concept_id=dx.omop_concept_id,
@@ -831,6 +873,7 @@ class DifferentialDiagnosisService:
                 recommended_workup=dx.recommended_workup,
                 key_features=dx.key_features,
                 prevalence_modifier=prevalence_mod,
+                cer_citation=cer_citation,
             )
             differential.append(candidate)
 
@@ -932,6 +975,170 @@ class DifferentialDiagnosisService:
                 ])
 
         return list(set(suggestions))[:8]
+
+    def _build_diagnosis_cer(
+        self,
+        dx: DiagnosisTemplate,
+        supporting: list[str],
+        opposing: list[str],
+        prob_score: float,
+        classic_count: int,
+        age: int | None,
+        gender: str | None,
+    ) -> DiagnosisCERCitation:
+        """Build a CER (Claim-Evidence-Reasoning) citation for a diagnosis.
+
+        This provides structured clinical reasoning for why a diagnosis is considered.
+        """
+        # Build the claim based on probability
+        if prob_score >= 0.7:
+            probability_term = "highly likely"
+        elif prob_score >= 0.5:
+            probability_term = "likely"
+        elif prob_score >= 0.3:
+            probability_term = "possible"
+        else:
+            probability_term = "less likely but should be considered"
+
+        claim = (
+            f"{dx.name} is {probability_term} given the presenting findings "
+            f"(estimated probability: {prob_score:.0%})"
+        )
+
+        # Build supporting evidence
+        supporting_evidence: list[str] = []
+
+        # Add matched findings as evidence
+        if supporting:
+            for finding in supporting[:4]:
+                finding_readable = finding.replace("_", " ")
+                if finding in dx.classic_findings:
+                    supporting_evidence.append(f"Classic finding present: {finding_readable}")
+                elif finding in dx.common_findings:
+                    supporting_evidence.append(f"Common finding present: {finding_readable}")
+                else:
+                    supporting_evidence.append(f"Associated finding: {finding_readable}")
+
+        # Add demographic evidence
+        if age is not None and dx.age_peak:
+            age_min, age_max = dx.age_peak
+            if age_min <= age <= age_max:
+                supporting_evidence.append(
+                    f"Patient age ({age}) within peak incidence range ({age_min}-{age_max})"
+                )
+
+        if gender is not None and dx.gender_ratio != 1.0:
+            if gender.lower() == "male" and dx.gender_ratio > 1.5:
+                supporting_evidence.append(f"More common in males (ratio {dx.gender_ratio}:1)")
+            elif gender.lower() == "female" and dx.gender_ratio < 0.7:
+                supporting_evidence.append(f"More common in females (ratio 1:{1/dx.gender_ratio:.1f})")
+
+        # Add classic findings count
+        if classic_count >= 2:
+            supporting_evidence.append(f"Multiple classic findings present ({classic_count})")
+
+        # Build opposing evidence
+        opposing_evidence: list[str] = []
+        if opposing:
+            for finding in opposing[:3]:
+                finding_readable = finding.replace("_", " ")
+                opposing_evidence.append(f"Atypical finding: {finding_readable}")
+
+        # Add demographic counter-evidence
+        if age is not None and dx.age_peak:
+            age_min, age_max = dx.age_peak
+            mid_age = (age_min + age_max) / 2
+            if abs(age - mid_age) > 30:
+                opposing_evidence.append(
+                    f"Patient age ({age}) outside typical range ({age_min}-{age_max})"
+                )
+
+        # Build reasoning
+        reasoning_parts = []
+
+        # Core diagnostic reasoning
+        if classic_count >= 2:
+            reasoning_parts.append(
+                f"The presence of {classic_count} classic findings strongly suggests {dx.name}."
+            )
+        elif classic_count == 1:
+            reasoning_parts.append(
+                f"One classic finding is present, supporting consideration of {dx.name}."
+            )
+        elif supporting:
+            reasoning_parts.append(
+                f"While no pathognomonic findings are present, "
+                f"the constellation of {len(supporting)} associated symptoms "
+                f"warrants consideration of {dx.name}."
+            )
+
+        # Urgency reasoning
+        if dx.urgency == DiagnosisUrgency.EMERGENT:
+            reasoning_parts.append(
+                "This is a time-sensitive diagnosis requiring immediate evaluation and intervention."
+            )
+        elif dx.urgency == DiagnosisUrgency.URGENT:
+            reasoning_parts.append(
+                "This diagnosis requires prompt evaluation, typically same-day."
+            )
+
+        # Workup recommendation reasoning
+        if dx.recommended_workup:
+            workup_str = ", ".join(dx.recommended_workup[:3])
+            reasoning_parts.append(
+                f"Recommended workup ({workup_str}) will help confirm or exclude this diagnosis."
+            )
+
+        reasoning = " ".join(reasoning_parts)
+
+        # Determine CER strength
+        if prob_score >= 0.7 and classic_count >= 2:
+            strength = CERStrength.STRONG
+        elif prob_score >= 0.4 or classic_count >= 1:
+            strength = CERStrength.MODERATE
+        else:
+            strength = CERStrength.WEAK
+
+        # Build clinical pearls from key features
+        clinical_pearls = dx.key_features[:4] if dx.key_features else []
+
+        # Build diagnostic criteria (for diagnoses that have formal criteria)
+        diagnostic_criteria: list[str] = []
+        if dx.name == "Acute Coronary Syndrome (ACS)":
+            diagnostic_criteria = [
+                "ECG changes (ST elevation, depression, or T-wave inversion)",
+                "Elevated cardiac biomarkers (troponin)",
+                "Characteristic symptoms",
+            ]
+        elif dx.name == "Meningitis":
+            diagnostic_criteria = [
+                "Classic triad: fever, headache, neck stiffness",
+                "CSF analysis abnormalities",
+                "Positive meningeal signs",
+            ]
+        elif dx.name == "Diabetic Ketoacidosis":
+            diagnostic_criteria = [
+                "Blood glucose >250 mg/dL",
+                "Arterial pH <7.3 or bicarbonate <18 mEq/L",
+                "Positive serum or urine ketones",
+                "Anion gap >10",
+            ]
+
+        # Build must-rule-out list for emergent diagnoses
+        must_rule_out: list[str] = []
+        if dx.urgency == DiagnosisUrgency.EMERGENT:
+            must_rule_out = dx.red_flags[:3] if dx.red_flags else []
+
+        return DiagnosisCERCitation(
+            claim=claim,
+            supporting_evidence=supporting_evidence,
+            opposing_evidence=opposing_evidence,
+            reasoning=reasoning,
+            strength=strength,
+            clinical_pearls=clinical_pearls,
+            diagnostic_criteria=diagnostic_criteria,
+            must_rule_out=must_rule_out,
+        )
 
     def get_diagnoses_by_domain(self, domain: ClinicalDomain) -> list[DiagnosisTemplate]:
         """Get all diagnoses in a specific domain."""

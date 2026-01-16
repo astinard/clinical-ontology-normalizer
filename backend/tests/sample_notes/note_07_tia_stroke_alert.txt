@@ -1,0 +1,114 @@
+FACILITY: Example Medical Center (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: ED Provider Note - Stroke Alert
+DATE/TIME: 2026-01-22 06:42
+AUTHOR: Riley Example, MD (Emergency Medicine)
+
+PATIENT: TEST, KILO
+MRN: TEST20013
+DOB: 1951-07-19
+AGE/SEX: 74-year-old male
+
+CHIEF COMPLAINT
+Sudden right-sided weakness and slurred speech.
+
+HISTORY OF PRESENT ILLNESS
+74M with HTN, hyperlipidemia, and atrial fibrillation (NOT on anticoagulation per patient - "refused it") presents via EMS as stroke alert. Per wife, patient woke up at 0530 with right arm weakness and slurred speech. Symptoms noted to be improving in ambulance. Last known well: 2300 last night when went to bed.
+
+On arrival, patient able to speak clearly with mild word-finding difficulty. Right arm weakness improved but still present. Denies headache. Denies vision changes. No seizure activity witnessed.
+
+NIHSS calculated: 3 (1 for mild right arm drift, 1 for mild dysarthria, 1 for sensory extinction)
+
+REVIEW OF SYSTEMS
+Positive: right arm weakness (improving), speech difficulty (improving).
+Negative: headache, vision changes, facial droop currently, leg weakness, chest pain, palpitations.
+
+PAST MEDICAL HISTORY
+- Hypertension
+- Hyperlipidemia
+- Atrial fibrillation (diagnosed 2023, refused anticoagulation due to fall risk concerns)
+- Benign prostatic hyperplasia
+- Osteoarthritis
+
+MEDICATIONS
+- Amlodipine 10 mg daily
+- Atorvastatin 40 mg daily
+- Metoprolol succinate 50 mg daily
+- Aspirin 81 mg daily
+- Tamsulosin 0.4 mg daily
+
+ALLERGIES
+- NKDA
+
+SOCIAL HISTORY
+- Former smoker, quit 20 years ago
+- No alcohol
+- Lives with wife, independent at baseline
+- Retired engineer
+
+VITAL SIGNS (EMS/ED)
+06:35 (EMS)  BP 182/98  HR 88 (irregular)  RR 18  SpO2 97% RA
+06:45 (ED)   BP 176/94  HR 84 (irregular)  Glucose 142 mg/dL
+
+PHYSICAL EXAM
+General: Alert, cooperative, mild distress.
+HEENT: No facial droop currently. Tongue midline.
+Neck: No carotid bruits appreciated.
+Cardiac: Irregularly irregular rhythm, no murmurs.
+Lungs: Clear.
+Neuro:
+- Mental status: Alert, oriented x3. Mild word-finding difficulty but speech fluent.
+- Cranial nerves: PERRL, EOMI, no facial asymmetry currently, tongue midline.
+- Motor: Right arm 4/5, left arm 5/5. Bilateral lower extremities 5/5.
+- Sensory: Extinction to double simultaneous stimulation on right.
+- Coordination: Finger-to-nose mildly impaired on right.
+
+NIHSS: 3
+
+ED COURSE
+Stroke alert activated. CT head STAT obtained - no hemorrhage, no early ischemic changes. CTA head/neck obtained.
+
+Symptoms improving - now >4.5 hours from last known well and NIHSS 3 (low). Not a tPA candidate due to timing. Discussed with neurology.
+
+CTA shows moderate left ICA stenosis (~60%) but no acute occlusion.
+
+Given transient symptoms with near-complete resolution, presentation most consistent with TIA. However, will obtain MRI to assess for acute infarct.
+
+RESULTS
+CT Head (06:50): No acute intracranial hemorrhage. No large territory early ischemic changes. Mild chronic microvascular ischemic changes.
+
+CTA Head/Neck (07:15):
+- Left internal carotid artery: ~60% stenosis at origin.
+- Right internal carotid artery: <50% stenosis.
+- Intracranial vessels: Patent, no large vessel occlusion.
+
+LABS:
+- Glucose 142 mg/dL
+- INR 1.0 (not anticoagulated)
+- Creatinine 1.2 mg/dL
+- Troponin <0.01 ng/mL
+
+ECG: Atrial fibrillation with controlled ventricular rate (~82 bpm). No acute ST changes.
+
+ASSESSMENT
+1) Transient ischemic attack (TIA) - likely cardioembolic given atrial fibrillation without anticoagulation.
+2) Atrial fibrillation - not anticoagulated, major stroke risk factor.
+3) Left internal carotid artery stenosis, moderate (~60%).
+4) Hypertension.
+
+PLAN
+- Admit to stroke unit for monitoring and workup.
+- MRI brain with DWI to assess for acute infarct.
+- Echocardiogram to evaluate for intracardiac thrombus.
+- Strongly recommend anticoagulation initiation - rediscussed with patient and family given this event. Patient now agreeable to starting apixaban.
+- Continue aspirin.
+- Blood pressure management (permissive HTN acutely, then optimize).
+- Vascular surgery consult for consideration of carotid intervention given symptomatic stenosis.
+- Neurology following.
+
+DISPOSITION
+Admit: Stroke Unit.
+Condition: Stable.
+
+SIGNATURE
+Electronically signed by: Riley Example, MD
+Date/Time Signed: 2026-01-22 08:15

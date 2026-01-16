@@ -1,0 +1,155 @@
+FACILITY: Example Medical Center (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: ED Provider Note
+DATE/TIME: 2026-01-15 09:42
+AUTHOR: Jordan Example, MD (Emergency Medicine)
+
+PATIENT: TEST, PATIENT
+MRN: TEST12345
+DOB: 1961-04-12
+AGE/SEX: 64-year-old male
+
+CHIEF COMPLAINT
+Shortness of breath.
+
+HISTORY OF PRESENT ILLNESS
+64M with known HFrEF (EF ~25% per patient), CKD stage 4, HTN, DM2, CAD s/p CABG, and atrial fibrillation on anticoagulation presents with 3 days of worsening dyspnea and lower extremity edema. Reports orthopnea (now sleeping upright) and paroxysmal nocturnal dyspnea. Notes 8–10 lb weight gain over 1 week. States he ran out of furosemide 5 days ago.
+
+Denies chest pain. Denies fever or chills. Denies productive cough; has mild dry cough. Denies hemoptysis. No recent travel. No sick contacts. No recent surgery. No history of DVT/PE. No unilateral leg swelling.
+
+He reports decreased urine output since yesterday. No dysuria. No flank pain.
+
+Family history: Mother had colon cancer (patient denies personal history of colon cancer).
+
+REVIEW OF SYSTEMS
+Positive: dyspnea, orthopnea, PND, leg swelling, decreased urine output.
+Negative: chest pain, syncope, fever, chills, hemoptysis, abdominal pain, dysuria, focal weakness, confusion.
+
+PAST MEDICAL HISTORY
+- Heart failure with reduced ejection fraction (HFrEF), chronic
+- Chronic kidney disease (CKD) stage 4
+- Hypertension
+- Type 2 diabetes mellitus
+- Coronary artery disease; history of CABG (2018)
+- Atrial fibrillation (persistent)
+- Hyperlipidemia
+- Obstructive sleep apnea (uses CPAP intermittently)
+- Chronic anemia
+
+PAST SURGICAL HISTORY
+- CABG (2018)
+
+MEDICATIONS (per patient / med list)
+- Furosemide 40 mg PO BID (ran out 5 days ago)
+- Carvedilol 12.5 mg PO BID
+- Lisinopril 10 mg PO daily
+- Spironolactone 25 mg PO daily
+- Apixaban 5 mg PO BID (for atrial fibrillation)
+- Atorvastatin 40 mg PO nightly
+- Insulin glargine 18 units nightly
+
+ALLERGIES
+- Penicillin: rash (no anaphylaxis)
+
+SOCIAL HISTORY
+- Former smoker, 20 pack-years, quit 10 years ago
+- Denies illicit drugs
+- Rare alcohol
+
+VITAL SIGNS (ED triage)
+09:15  BP 178/96  HR 112 (irregular)  RR 24  Temp 36.8 C  SpO2 88% RA
+After O2 4L NC: SpO2 94%
+
+PHYSICAL EXAM
+General: Alert, in mild respiratory distress, speaking in short sentences.
+HEENT: No oropharyngeal edema.
+Neck: JVP elevated.
+Cardiac: Irregularly irregular rhythm, tachycardic, no loud murmurs appreciated.
+Lungs: Bilateral crackles to mid-lung fields. No wheezing.
+Abdomen: Soft, non-tender, no rebound/guarding.
+Extremities: 2+ pitting edema to knees bilaterally. No calf tenderness. No unilateral swelling.
+Neuro: AOx3, no focal deficits.
+
+ED COURSE / MEDICAL DECISION MAKING
+Differential includes acute decompensated heart failure with pulmonary edema, cardiorenal syndrome / AKI on CKD, hypertensive emergency, ACS (rule out), pneumonia (less likely), and PE (less likely).
+
+Given hypoxia, crackles, edema, and BNP elevation, presentation most consistent with acute decompensated heart failure. Creatinine is elevated from baseline per patient report ("usually ~2.2"). Mild hyperkalemia present.
+
+No chest pain and no ischemic ST elevation on ECG. Troponin minimally elevated; suspect demand ischemia, but ACS cannot be fully excluded—will trend troponin.
+
+No fever/leukocytosis and CXR without focal consolidation; pneumonia is unlikely. COVID PCR negative.
+
+PE considered but lower suspicion given clear volume overload picture, no pleuritic chest pain, no hemoptysis, no unilateral swelling. Not pursuing CTPE at this time due to renal function and low pretest probability.
+
+TREATMENTS IN ED
+- Oxygen via nasal cannula 4L
+- Furosemide 80 mg IV x1 at 09:55
+- Nitroglycerin paste 1 inch topical for hypertension/pulmonary edema (held if SBP < 140)
+- Strict I/Os, monitor urine output
+- Repeat BMP ordered for potassium/creatinine reassessment
+- Cardiology consulted (phone)
+- Nephrology consult requested for AKI on CKD / hyperkalemia guidance
+
+RESULTS
+ECG (09:28): Atrial fibrillation with rapid ventricular response (~115 bpm). No ST-elevation. Nonspecific ST/T changes.
+
+LABS (09:40)
+CBC:
+- WBC 8.9 K/uL
+- Hgb 9.8 g/dL (chronic anemia)
+- Plt 214 K/uL
+
+BMP:
+- Sodium 132 mmol/L (low)
+- Potassium 5.6 mmol/L (high)
+- Chloride 98 mmol/L
+- CO2 (bicarb) 18 mmol/L (low)
+- BUN 62 mg/dL (high)
+- Creatinine 3.4 mg/dL (high)
+- Glucose 212 mg/dL (high)
+- Calcium 8.4 mg/dL
+
+Magnesium: 2.0 mg/dL
+BNP: 2,450 pg/mL (high)
+High-sensitivity troponin: 34 ng/L (slightly high) → repeat pending
+Lactate: 1.4 mmol/L (normal)
+
+Urinalysis:
+- Protein 2+
+- No nitrites
+- No leukocyte esterase
+- RBC 0–2/hpf
+- WBC 0–2/hpf
+
+COVID-19 PCR: Negative
+
+IMAGING
+CXR (portable): Pulmonary vascular congestion with bilateral interstitial edema and small bilateral pleural effusions. No focal consolidation. No pneumothorax.
+
+ASSESSMENT
+1) Acute decompensated heart failure (HFrEF) with hypoxic respiratory failure / pulmonary edema.
+2) Acute kidney injury on chronic kidney disease (suspect cardiorenal syndrome).
+3) Hyperkalemia, mild-moderate (K 5.6).
+4) Hypertension (severe range on arrival; improving with therapy).
+5) Atrial fibrillation with RVR (rate ~110s).
+6) Type 2 diabetes mellitus with hyperglycemia.
+7) Chronic anemia.
+
+PLAN
+- Admit to telemetry / stepdown for diuresis and close monitoring.
+- Continue IV diuresis; adjust dose per response and renal function.
+- Trend BMP (K/Cr), magnesium; monitor urine output.
+- Hyperkalemia management: consider potassium binder and repeat K; avoid additional potassium.
+- Hold ACE inhibitor (lisinopril) and spironolactone for now due to AKI/hyperkalemia.
+- Trend troponin x2; monitor for ischemic symptoms.
+- Continue apixaban if no contraindications.
+- Cardiology and nephrology to follow inpatient.
+
+DISPOSITION
+Admit: Medicine/Telemetry.
+Condition: Stable but requiring inpatient management.
+Code status: Full code (per patient).
+
+ATTESTATION / SIGNATURE
+I personally evaluated this patient and reviewed available results.
+Electronically signed by: Jordan Example, MD
+Date/Time Signed: 2026-01-15 10:26

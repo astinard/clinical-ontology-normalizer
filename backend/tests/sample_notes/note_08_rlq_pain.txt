@@ -1,0 +1,98 @@
+FACILITY: Example Medical Center (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: ED Provider Note
+DATE/TIME: 2026-01-25 11:20
+AUTHOR: Avery Example, MD (Emergency Medicine)
+
+PATIENT: TEST, LIMA
+MRN: TEST20014
+DOB: 2003-08-14
+AGE/SEX: 22-year-old male
+
+CHIEF COMPLAINT
+Right lower quadrant abdominal pain x 1 day.
+
+HISTORY OF PRESENT ILLNESS
+22M previously healthy presents with 1 day of abdominal pain. Pain started periumbilically yesterday evening, then migrated to RLQ overnight. Currently 7/10, sharp, constant, worse with movement and coughing. Associated with nausea and one episode of non-bloody, non-bilious vomiting this morning. Reports decreased appetite since yesterday. Last bowel movement was yesterday, normal. No diarrhea. No dysuria or urinary frequency. No testicular pain.
+
+Denies recent travel, sick contacts, or unusual foods.
+
+REVIEW OF SYSTEMS
+Positive: RLQ abdominal pain, nausea, vomiting x1, anorexia.
+Negative: fever (subjective), diarrhea, constipation, hematochezia, melena, dysuria, testicular pain.
+
+PAST MEDICAL HISTORY
+- None
+
+PAST SURGICAL HISTORY
+- None (appendix in situ)
+
+MEDICATIONS
+- None
+
+ALLERGIES
+- NKDA
+
+SOCIAL HISTORY
+- College student
+- Non-smoker
+- Social alcohol on weekends
+- Denies illicit drugs
+- Sexually active with female partner, uses condoms
+
+VITAL SIGNS
+11:05  BP 128/78  HR 92  RR 18  Temp 37.8 C (100.0 F)  SpO2 99% RA
+
+PHYSICAL EXAM
+General: Lying still, uncomfortable with movement.
+Abdomen:
+- Inspection: Flat, no distension.
+- Auscultation: Hypoactive bowel sounds.
+- Palpation: Tender RLQ with voluntary guarding. Positive McBurney's point tenderness. Positive Rovsing's sign (LLQ palpation elicits RLQ pain). Positive psoas sign. No rebound tenderness. No periumbilical or LLQ tenderness currently.
+- No inguinal hernias palpable.
+GU: Testes non-tender bilaterally, no masses, no scrotal swelling.
+Rectal: Deferred (CT ordered).
+
+ED COURSE
+Classic presentation for acute appendicitis: periumbilical pain migrating to RLQ, anorexia, nausea/vomiting, low-grade fever, and positive exam findings (McBurney's, Rovsing's, psoas sign).
+
+Alvarado score: 8 (migratory pain +1, anorexia +1, nausea/vomiting +1, RLQ tenderness +2, rebound tenderness 0, fever +1, leukocytosis +2) - High probability.
+
+CT abdomen/pelvis obtained for confirmation prior to surgical consultation.
+
+RESULTS
+LABS (11:30):
+- WBC 14.2 K/uL (elevated with left shift, 82% neutrophils)
+- Hgb 15.1 g/dL
+- Plt 256 K/uL
+- BMP: Na 139, K 4.1, Cr 1.0, Glucose 98
+- Lipase 32 U/L (normal)
+- Urinalysis: Clear, no WBC, no bacteria, no blood
+
+CT Abdomen/Pelvis with IV contrast (12:15):
+- Appendix: Dilated to 11 mm with wall thickening and enhancement.
+- Periappendiceal fat stranding present.
+- No appendicolith visualized.
+- No free air.
+- No abscess or phlegmon.
+- Impression: Acute uncomplicated appendicitis.
+
+ASSESSMENT
+1) Acute appendicitis, uncomplicated.
+
+PLAN
+- NPO
+- IV fluids: LR bolus then maintenance
+- Pain control: Morphine 4 mg IV PRN
+- Antiemetic: Ondansetron 4 mg IV
+- General surgery consult for appendectomy
+- Preoperative antibiotics per surgery
+
+Surgery team evaluated and patient consented for laparoscopic appendectomy, planned for this afternoon.
+
+DISPOSITION
+Admit: Surgery service.
+Condition: Stable.
+
+SIGNATURE
+Electronically signed by: Avery Example, MD
+Date/Time Signed: 2026-01-25 13:02

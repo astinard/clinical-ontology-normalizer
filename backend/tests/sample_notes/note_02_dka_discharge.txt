@@ -1,0 +1,46 @@
+FACILITY: Example Medical Center (SYNTHETIC TEST NOTE — NOT REAL PATIENT DATA)
+DOCUMENT TYPE: Hospital Discharge Summary
+ADMISSION: 2026-02-05
+DISCHARGE: 2026-02-07
+AUTHOR: Lee Example, MD (Hospital Medicine)
+
+PATIENT: TEST, GOLF
+MRN: TEST20009
+DOB: 2001-03-15
+AGE/SEX: 24-year-old female
+
+DISCHARGE DIAGNOSES
+1) Diabetic ketoacidosis (DKA) — resolved.
+2) Type 1 diabetes mellitus.
+3) Dehydration — resolved.
+4) Nausea/vomiting — resolved.
+
+HOSPITAL COURSE
+Patient presented with 1 day of vomiting and abdominal pain after missing insulin doses for ~2 days due to "running out." Initial labs consistent with DKA (anion gap metabolic acidosis, hyperglycemia, positive serum ketones). Treated with IV fluids and insulin infusion per protocol. Anion gap closed within 18 hours and patient transitioned to subcutaneous insulin.
+
+Infectious workup: no infection identified. Afebrile throughout admission. Blood cultures with no growth to date. CXR without consolidation. UA without evidence of UTI.
+
+KEY LABS (on admission)
+Glucose 512 mg/dL
+Anion gap 26
+Bicarbonate 12 mmol/L
+Venous pH 7.19
+Beta-hydroxybutyrate elevated
+Creatinine 1.4 mg/dL (improved to 0.9 with fluids)
+
+DISCHARGE MEDICATIONS
+- Insulin glargine 22 units nightly
+- Insulin lispro with meals per carb counting
+- Ondansetron 4 mg PRN nausea
+
+DISCHARGE INSTRUCTIONS
+- Resume insulin regimen; do not skip basal insulin.
+- Follow up with endocrinology within 1 week.
+- Return for vomiting, abdominal pain, confusion, or blood glucose persistently >300.
+
+DISCHARGE CONDITION
+Stable.
+
+SIGNATURE
+Electronically signed by: Lee Example, MD
+Date/Time Signed: 2026-02-07 10:10

@@ -1,18 +1,23 @@
 """Rule-based NLP service for clinical mention extraction.
 
-Uses regex patterns and vocabulary lookups to extract mentions
-from clinical documents.
+Uses Aho-Corasick algorithm for O(n) pattern matching and vocabulary
+lookups to extract mentions from clinical documents.
 """
 
 import logging
 import os
 import re
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
+
+import ahocorasick
 
 from app.schemas.base import Assertion, Experiencer, Temporality
 from app.services.nlp import BaseNLPService, ExtractedMention
 from app.services.vocabulary import VocabularyService, get_vocabulary_service
+
+if TYPE_CHECKING:
+    from ahocorasick import Automaton
 
 logger = logging.getLogger(__name__)
 
@@ -171,36 +176,48 @@ class RuleBasedNLPService(BaseNLPService):
             # Use singleton vocabulary service (pre-loaded at app startup)
             self._vocabulary_service = get_vocabulary_service()
 
-        # Pattern info: (pattern, synonym, domain_id, concept_id)
-        self._term_patterns: list[tuple[re.Pattern[str], str, str, int]] = []
+        # Aho-Corasick automaton for O(n) pattern matching
+        self._automaton: "Automaton | None" = None
         self._initialized = False
 
     def _initialize_patterns(self) -> None:
-        """Build regex patterns from vocabulary terms."""
+        """Build Aho-Corasick automaton from vocabulary terms.
+
+        Uses Aho-Corasick algorithm for O(n) pattern matching regardless
+        of the number of patterns. This is significantly faster than
+        regex-based matching for large vocabularies.
+        """
         if self._initialized:
             return
 
         self._vocabulary_service.load()
-        self._term_patterns = []
 
-        # Build patterns from vocabulary synonyms with domain/concept hints
+        # Build Aho-Corasick automaton
+        self._automaton = ahocorasick.Automaton()
+
+        # Track which patterns we've added (avoid duplicates)
+        added_patterns: set[str] = set()
+
+        # Build automaton from vocabulary synonyms with domain/concept hints
         for concept in self._vocabulary_service.concepts:
             for synonym in concept.synonyms:
-                # Create word-boundary pattern for each synonym
-                # Use case-insensitive matching
-                pattern = re.compile(
-                    r"\b" + re.escape(synonym) + r"\b",
-                    re.IGNORECASE,
-                )
-                # Store pattern with domain and concept_id for direct mapping
-                self._term_patterns.append((
-                    pattern,
-                    synonym,
-                    concept.domain_id,
-                    concept.concept_id
-                ))
+                # Normalize to lowercase for case-insensitive matching
+                key = synonym.lower()
+
+                # Skip duplicates (keep first occurrence)
+                if key in added_patterns:
+                    continue
+
+                added_patterns.add(key)
+
+                # Store metadata: (original_synonym, domain_id, concept_id)
+                self._automaton.add_word(key, (synonym, concept.domain_id, concept.concept_id))
+
+        # Finalize the automaton (required before searching)
+        self._automaton.make_automaton()
 
         self._initialized = True
+        logger.info(f"Aho-Corasick automaton built with {len(added_patterns)} patterns")
 
     def extract_mentions(
         self,
@@ -210,9 +227,9 @@ class RuleBasedNLPService(BaseNLPService):
     ) -> list[ExtractedMention]:
         """Extract clinical mentions from document text.
 
-        Uses vocabulary-based matching and regex patterns to find
-        clinical terms, then applies context rules for assertion,
-        temporality, and experiencer.
+        Uses Aho-Corasick for O(n) pattern matching to find clinical
+        terms, then applies context rules for assertion, temporality,
+        and experiencer.
 
         Args:
             text: The clinical note text to process.
@@ -224,62 +241,103 @@ class RuleBasedNLPService(BaseNLPService):
         """
         self._initialize_patterns()
 
+        if self._automaton is None:
+            return []
+
         mentions: list[ExtractedMention] = []
         seen_spans: set[tuple[int, int]] = set()
 
-        # Extract vocabulary-based mentions
-        for pattern, lexical_variant, domain_id, concept_id in self._term_patterns:
-            for match in pattern.finditer(text):
-                start, end = match.start(), match.end()
-                matched_text = match.group()
+        # Search text with Aho-Corasick automaton (O(n) complexity)
+        text_lower = text.lower()
 
-                # Skip if we've already found a mention at this span
-                if (start, end) in seen_spans:
-                    continue
+        for end_index, (lexical_variant, domain_id, concept_id) in self._automaton.iter(text_lower):
+            # Calculate start position (end_index is inclusive)
+            pattern_len = len(lexical_variant)
+            start = end_index - pattern_len + 1
+            end = end_index + 1
 
-                # Skip stopwords (common English words that create noise)
-                if matched_text.lower() in self.STOPWORDS:
-                    continue
+            # Get the original text (preserve case)
+            matched_text = text[start:end]
 
-                # Skip terms below minimum length
-                if len(matched_text) < self.MIN_TERM_LENGTH:
-                    continue
+            # Verify word boundaries (automaton matches substrings)
+            if not self._is_word_boundary(text, start, end):
+                continue
 
-                seen_spans.add((start, end))
+            # Skip if we've already found a mention at this span
+            if (start, end) in seen_spans:
+                continue
 
-                # Get context for attribute detection
-                # Use preceding context for negation (NegEx-style)
-                preceding_context = self._get_preceding_context(text, start)
-                # Use surrounding context for temporality and experiencer
-                surrounding_context = self._get_context_window(text, start, end)
+            # Skip stopwords (common English words that create noise)
+            if matched_text.lower() in self.STOPWORDS:
+                continue
 
-                # Determine attributes from context
-                assertion = self._detect_assertion(preceding_context)
-                temporality = self._detect_temporality(surrounding_context)
-                experiencer = self._detect_experiencer(surrounding_context)
+            # Skip terms below minimum length
+            if len(matched_text) < self.MIN_TERM_LENGTH:
+                continue
 
-                # Get section name
-                section = self.get_section_name(text, start)
+            seen_spans.add((start, end))
 
-                mention = ExtractedMention(
-                    text=match.group(),
-                    start_offset=start,
-                    end_offset=end,
-                    lexical_variant=lexical_variant,
-                    section=section,
-                    assertion=assertion,
-                    temporality=temporality,
-                    experiencer=experiencer,
-                    confidence=0.8,  # Rule-based confidence
-                    domain_hint=domain_id,  # Pass domain from vocabulary
-                    omop_concept_id=concept_id,  # Direct concept_id if available
-                )
-                mentions.append(mention)
+            # Get context for attribute detection
+            # Use preceding context for negation (NegEx-style)
+            preceding_context = self._get_preceding_context(text, start)
+            # Use surrounding context for temporality and experiencer
+            surrounding_context = self._get_context_window(text, start, end)
+
+            # Determine attributes from context
+            assertion = self._detect_assertion(preceding_context)
+            temporality = self._detect_temporality(surrounding_context)
+            experiencer = self._detect_experiencer(surrounding_context)
+
+            # Get section name
+            section = self.get_section_name(text, start)
+
+            mention = ExtractedMention(
+                text=matched_text,
+                start_offset=start,
+                end_offset=end,
+                lexical_variant=lexical_variant,
+                section=section,
+                assertion=assertion,
+                temporality=temporality,
+                experiencer=experiencer,
+                confidence=0.8,  # Rule-based confidence
+                domain_hint=domain_id,  # Pass domain from vocabulary
+                omop_concept_id=concept_id,  # Direct concept_id if available
+            )
+            mentions.append(mention)
 
         # Sort mentions by position
         mentions.sort(key=lambda m: m.start_offset)
 
         return mentions
+
+    def _is_word_boundary(self, text: str, start: int, end: int) -> bool:
+        """Check if match is at word boundaries.
+
+        The Aho-Corasick automaton matches substrings, so we need to
+        verify that matches occur at word boundaries (like \\b in regex).
+
+        Args:
+            text: Full document text.
+            start: Start offset of match.
+            end: End offset of match.
+
+        Returns:
+            True if match is at word boundaries.
+        """
+        # Check start boundary
+        if start > 0:
+            prev_char = text[start - 1]
+            if prev_char.isalnum() or prev_char == '_':
+                return False
+
+        # Check end boundary
+        if end < len(text):
+            next_char = text[end]
+            if next_char.isalnum() or next_char == '_':
+                return False
+
+        return True
 
     def _get_context_window(
         self,

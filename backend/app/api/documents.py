@@ -1421,3 +1421,134 @@ async def run_calculator(
         references=result.references,
         calculation_time_ms=round(calculation_time_ms, 2),
     )
+
+
+# ============================================================================
+# Differential Diagnosis Endpoint
+# ============================================================================
+
+
+class DifferentialDiagnosisRequest(BaseModel):
+    """Request body for differential diagnosis generation."""
+
+    findings: list[str] = Field(
+        ...,
+        description="List of clinical findings (symptoms, signs, abnormalities)",
+    )
+    age: int | None = Field(None, ge=0, le=120, description="Patient age in years")
+    gender: str | None = Field(None, description="Patient gender ('male' or 'female')")
+    max_diagnoses: int = Field(10, ge=1, le=20, description="Maximum diagnoses to return")
+
+
+class DiagnosisCandidateResponse(BaseModel):
+    """A candidate diagnosis in the differential."""
+
+    name: str = Field(..., description="Diagnosis name")
+    omop_concept_id: int | None = Field(None, description="OMOP concept ID")
+    icd10_code: str | None = Field(None, description="ICD-10 code")
+    domain: str = Field(..., description="Clinical domain (cardiovascular, respiratory, etc.)")
+    urgency: str = Field(..., description="Urgency level (emergent, urgent, semi_urgent, routine)")
+    probability_score: float = Field(..., description="Relative probability score (0-1)")
+    supporting_findings: list[str] = Field(..., description="Findings supporting this diagnosis")
+    opposing_findings: list[str] = Field(..., description="Findings arguing against")
+    red_flags: list[str] = Field(..., description="Warning signs to watch for")
+    recommended_workup: list[str] = Field(..., description="Suggested diagnostic tests")
+    key_features: list[str] = Field(..., description="Classic features of this diagnosis")
+
+
+class DifferentialDiagnosisResponse(BaseModel):
+    """Response from differential diagnosis generation."""
+
+    presenting_findings: list[str] = Field(..., description="Input findings")
+    age: int | None = Field(None, description="Patient age if provided")
+    gender: str | None = Field(None, description="Patient gender if provided")
+    differential: list[DiagnosisCandidateResponse] = Field(..., description="Ranked differential diagnoses")
+    red_flag_diagnoses: list[str] = Field(..., description="High-urgency diagnoses to rule out")
+    cannot_miss_diagnoses: list[str] = Field(..., description="Must-not-miss diagnoses")
+    suggested_history: list[str] = Field(..., description="Additional history to gather")
+    suggested_exam: list[str] = Field(..., description="Physical exam maneuvers")
+    generation_time_ms: float = Field(..., description="Time taken in ms")
+    database_stats: dict = Field(..., description="Diagnosis database statistics")
+
+
+@router.post(
+    "/clinical/differential",
+    response_model=DifferentialDiagnosisResponse,
+    summary="Generate differential diagnosis",
+    description="Generate a ranked differential diagnosis from clinical findings.",
+)
+async def generate_differential_diagnosis(
+    request: DifferentialDiagnosisRequest,
+) -> DifferentialDiagnosisResponse:
+    """Generate a ranked differential diagnosis based on clinical findings.
+
+    This endpoint provides clinical decision support by analyzing presenting
+    symptoms, signs, and findings to generate a ranked list of potential
+    diagnoses. Results include:
+
+    - **Probability ranking**: Diagnoses ranked by likelihood based on findings
+    - **Urgency classification**: Emergent, urgent, semi-urgent, or routine
+    - **Supporting evidence**: Which findings support each diagnosis
+    - **Red flags**: Warning signs that require immediate attention
+    - **Recommended workup**: Suggested diagnostic tests
+    - **History/exam suggestions**: Additional data to gather
+
+    Demographics (age, gender) adjust probability estimates based on
+    disease epidemiology.
+
+    **Important**: This is a clinical decision support tool and should not
+    replace clinical judgment. All diagnoses should be confirmed through
+    appropriate diagnostic workup.
+
+    Args:
+        request: Clinical findings and optional demographics.
+
+    Returns:
+        DifferentialDiagnosisResponse with ranked diagnoses and recommendations.
+    """
+    import time
+    from app.services.differential_diagnosis import get_differential_diagnosis_service
+
+    start_time = time.perf_counter()
+
+    service = get_differential_diagnosis_service()
+
+    result = service.generate_differential(
+        findings=request.findings,
+        age=request.age,
+        gender=request.gender,
+        max_diagnoses=request.max_diagnoses,
+    )
+
+    generation_time_ms = (time.perf_counter() - start_time) * 1000
+
+    # Convert to response format
+    differential = [
+        DiagnosisCandidateResponse(
+            name=dx.name,
+            omop_concept_id=dx.omop_concept_id,
+            icd10_code=dx.icd10_code,
+            domain=dx.domain.value,
+            urgency=dx.urgency.value,
+            probability_score=dx.probability_score,
+            supporting_findings=dx.supporting_findings,
+            opposing_findings=dx.opposing_findings,
+            red_flags=dx.red_flags,
+            recommended_workup=dx.recommended_workup,
+            key_features=dx.key_features,
+        )
+        for dx in result.differential
+    ]
+
+    return DifferentialDiagnosisResponse(
+        presenting_findings=result.presenting_findings,
+        age=result.age,
+        gender=result.gender,
+        differential=differential,
+        red_flag_diagnoses=result.red_flag_diagnoses,
+        cannot_miss_diagnoses=result.cannot_miss_diagnoses,
+        suggested_history=result.suggested_history,
+        suggested_exam=result.suggested_exam,
+        generation_time_ms=round(generation_time_ms, 2),
+        database_stats=service.get_stats(),
+    )

@@ -107,6 +107,15 @@ from app.services.clinical_calculators import (
     get_clinical_calculator_service,
     reset_clinical_calculator_service,
 )
+from app.services.differential_diagnosis import (
+    ClinicalDomain,
+    DiagnosisCandidate,
+    DiagnosisUrgency,
+    DifferentialDiagnosisService,
+    DifferentialResult,
+    get_differential_diagnosis_service,
+    reset_differential_diagnosis_service,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -183,4 +192,11 @@ __all__ = [
     "RiskLevel",
     "get_clinical_calculator_service",
     "reset_clinical_calculator_service",
+    "ClinicalDomain",
+    "DiagnosisCandidate",
+    "DiagnosisUrgency",
+    "DifferentialDiagnosisService",
+    "DifferentialResult",
+    "get_differential_diagnosis_service",
+    "reset_differential_diagnosis_service",
 ]

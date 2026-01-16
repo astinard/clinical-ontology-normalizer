@@ -10,7 +10,12 @@ import re
 from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
 
-import ahocorasick
+try:
+    import ahocorasick
+    HAS_AHOCORASICK = True
+except ImportError:
+    ahocorasick = None  # type: ignore
+    HAS_AHOCORASICK = False
 
 from app.schemas.base import Assertion, Experiencer, Temporality
 from app.services.nlp import BaseNLPService, ExtractedMention
@@ -206,7 +211,12 @@ class RuleBasedNLPService(BaseNLPService):
 
         self._vocabulary_service.load()
 
-        # Build Aho-Corasick automaton
+        # Build Aho-Corasick automaton (if available)
+        if not HAS_AHOCORASICK:
+            logger.warning("ahocorasick not installed, rule-based extraction will be limited")
+            self._initialized = True
+            return
+
         self._automaton = ahocorasick.Automaton()
 
         # Track which patterns we've added (avoid duplicates)

@@ -803,3 +803,360 @@ async def preview_ensemble_extraction(
         by_domain=result.stats.get("by_domain", {}),
         by_relation_type=result.stats.get("by_relation_type", {}),
     )
+
+
+# ============================================================================
+# Enhanced Vocabulary Search Endpoint
+# ============================================================================
+
+
+class VocabularySearchRequest(BaseModel):
+    """Request body for vocabulary search."""
+
+    query: str = Field(..., description="Search query (term, abbreviation, or natural language)")
+    limit: int = Field(10, ge=1, le=100, description="Maximum number of results")
+    use_semantic: bool = Field(False, description="Use semantic similarity search (slower but finds related terms)")
+
+
+class VocabularyConceptResult(BaseModel):
+    """A single vocabulary concept result."""
+
+    concept_id: int = Field(..., description="OMOP concept ID")
+    concept_name: str = Field(..., description="Standard concept name")
+    concept_code: str = Field(..., description="Source vocabulary code")
+    vocabulary_id: str = Field(..., description="Source vocabulary (SNOMED, RxNorm, etc.)")
+    domain: str = Field(..., description="OMOP domain (Condition, Drug, Measurement, etc.)")
+    synonyms: list[str] = Field(..., description="All known synonyms")
+    similarity_score: float | None = Field(None, description="Similarity score (for semantic search)")
+
+
+class VocabularySearchResponse(BaseModel):
+    """Response from vocabulary search."""
+
+    results: list[VocabularyConceptResult] = Field(..., description="Matching concepts")
+    search_time_ms: float = Field(..., description="Time taken for search in ms")
+    result_count: int = Field(..., description="Number of results returned")
+    search_mode: str = Field(..., description="Search mode used (text or semantic)")
+    stats: dict[str, int | bool] = Field(..., description="Vocabulary statistics")
+
+
+@router.post(
+    "/vocabulary/search",
+    response_model=VocabularySearchResponse,
+    summary="Search enhanced OMOP vocabulary",
+    description="Search for OMOP concepts using text matching or semantic similarity.",
+)
+async def search_vocabulary(
+    request: VocabularySearchRequest,
+) -> VocabularySearchResponse:
+    """Search the enhanced OMOP vocabulary.
+
+    This endpoint provides two search modes:
+    - **Text search**: Fast exact and partial matching against concept names and synonyms.
+      Automatically expands clinical abbreviations (HTN->hypertension, DM->diabetes, etc.)
+    - **Semantic search**: Uses sentence embeddings to find conceptually similar terms.
+      Useful for natural language queries like "sugar disease" -> diabetes.
+
+    The vocabulary includes:
+    - 269+ concepts across Conditions, Drugs, Measurements, Procedures
+    - UMLS-style synonym expansion with 100+ clinical abbreviations
+    - American/British spelling variations (anemia/anaemia, tumor/tumour)
+
+    Args:
+        request: Search query and options.
+
+    Returns:
+        VocabularySearchResponse with matching concepts and statistics.
+    """
+    import time
+    from app.services.vocabulary_enhanced import get_enhanced_vocabulary_service
+
+    start_time = time.perf_counter()
+
+    # Get enhanced vocabulary service
+    service = get_enhanced_vocabulary_service(
+        use_embeddings=request.use_semantic,
+        use_automaton=False,  # Not needed for search
+    )
+
+    results: list[VocabularyConceptResult] = []
+    search_mode = "text"
+
+    if request.use_semantic:
+        # Semantic similarity search
+        search_mode = "semantic"
+        matches = service.semantic_search(request.query, limit=request.limit)
+        for concept, score in matches:
+            results.append(
+                VocabularyConceptResult(
+                    concept_id=concept.concept_id,
+                    concept_name=concept.concept_name,
+                    concept_code=concept.concept_code,
+                    vocabulary_id=concept.vocabulary_id,
+                    domain=concept.domain.value if hasattr(concept.domain, "value") else str(concept.domain),
+                    synonyms=concept.synonyms[:10],  # Limit synonyms for response size
+                    similarity_score=round(score, 4),
+                )
+            )
+    else:
+        # Fast text search
+        matches = service.search(request.query, limit=request.limit)
+        for concept in matches:
+            results.append(
+                VocabularyConceptResult(
+                    concept_id=concept.concept_id,
+                    concept_name=concept.concept_name,
+                    concept_code=concept.concept_code,
+                    vocabulary_id=concept.vocabulary_id,
+                    domain=concept.domain.value if hasattr(concept.domain, "value") else str(concept.domain),
+                    synonyms=concept.synonyms[:10],
+                    similarity_score=None,
+                )
+            )
+
+    search_time_ms = (time.perf_counter() - start_time) * 1000
+
+    # Get vocabulary statistics
+    stats = service.get_enhanced_stats()
+
+    return VocabularySearchResponse(
+        results=results,
+        search_time_ms=round(search_time_ms, 2),
+        result_count=len(results),
+        search_mode=search_mode,
+        stats=stats,
+    )
+
+
+# ============================================================================
+# Drug Interaction Checking Endpoint
+# ============================================================================
+
+
+class DrugInteractionCheckRequest(BaseModel):
+    """Request body for drug interaction check."""
+
+    drugs: list[str] = Field(..., description="List of drug names to check for interactions")
+
+
+class DrugInteractionResult(BaseModel):
+    """A single drug interaction."""
+
+    drug1: str = Field(..., description="First drug in the interaction")
+    drug2: str = Field(..., description="Second drug in the interaction")
+    severity: str = Field(..., description="Severity level (contraindicated, major, moderate, minor)")
+    interaction_type: str = Field(..., description="Type of interaction (pharmacokinetic, etc.)")
+    description: str = Field(..., description="Description of the interaction mechanism")
+    clinical_effect: str = Field(..., description="Clinical effects/risks")
+    management: str = Field(..., description="Recommended management strategy")
+    references: list[str] = Field(..., description="Source references")
+
+
+class DrugInteractionCheckResponse(BaseModel):
+    """Response from drug interaction check."""
+
+    drugs_checked: list[str] = Field(..., description="Normalized list of drugs that were checked")
+    interactions: list[DrugInteractionResult] = Field(..., description="Found interactions")
+    total_interactions: int = Field(..., description="Total number of interactions found")
+    by_severity: dict[str, int] = Field(..., description="Count by severity level")
+    highest_severity: str | None = Field(None, description="Most severe interaction level found")
+    has_contraindicated: bool = Field(..., description="Whether any contraindicated combinations exist")
+    has_major: bool = Field(..., description="Whether any major interactions exist")
+    check_time_ms: float = Field(..., description="Time taken for the check in ms")
+    database_stats: dict = Field(..., description="Drug interaction database statistics")
+
+
+@router.post(
+    "/clinical/drug-interactions",
+    response_model=DrugInteractionCheckResponse,
+    summary="Check for drug-drug interactions",
+    description="Check a list of medications for known drug-drug interactions.",
+)
+async def check_drug_interactions(
+    request: DrugInteractionCheckRequest,
+) -> DrugInteractionCheckResponse:
+    """Check for drug-drug interactions among a list of medications.
+
+    This endpoint checks for known clinically significant drug-drug interactions
+    based on FDA labels and clinical guidelines. It returns:
+
+    - **Contraindicated**: Combinations that should never be used together
+    - **Major**: Serious interactions requiring close monitoring or avoidance
+    - **Moderate**: Interactions requiring caution and monitoring
+    - **Minor**: Usually not clinically significant
+
+    Supports both generic and brand names, as well as common abbreviations
+    (e.g., ASA for aspirin, HCTZ for hydrochlorothiazide).
+
+    Args:
+        request: List of drug names to check.
+
+    Returns:
+        DrugInteractionCheckResponse with all found interactions and statistics.
+    """
+    import time
+    from app.services.drug_interactions import get_drug_interaction_service
+
+    start_time = time.perf_counter()
+
+    service = get_drug_interaction_service()
+    result = service.check_interactions(request.drugs)
+
+    check_time_ms = (time.perf_counter() - start_time) * 1000
+
+    # Convert interactions to response format
+    interactions = [
+        DrugInteractionResult(
+            drug1=i.drug1,
+            drug2=i.drug2,
+            severity=i.severity.value,
+            interaction_type=i.interaction_type.value,
+            description=i.description,
+            clinical_effect=i.clinical_effect,
+            management=i.management,
+            references=i.references,
+        )
+        for i in result.interactions_found
+    ]
+
+    return DrugInteractionCheckResponse(
+        drugs_checked=result.drugs_checked,
+        interactions=interactions,
+        total_interactions=result.total_interactions,
+        by_severity=result.by_severity,
+        highest_severity=result.highest_severity.value if result.highest_severity else None,
+        has_contraindicated=result.has_contraindicated,
+        has_major=result.has_major,
+        check_time_ms=round(check_time_ms, 2),
+        database_stats=service.get_stats(),
+    )
+
+
+# ============================================================================
+# Lab Interpretation Endpoint
+# ============================================================================
+
+
+class LabValue(BaseModel):
+    """A single lab value for interpretation."""
+
+    test: str = Field(..., description="Test name, code, or alias (e.g., 'Na', 'sodium', 'K')")
+    value: float = Field(..., description="Numeric value")
+
+
+class LabInterpretRequest(BaseModel):
+    """Request body for lab interpretation."""
+
+    values: list[LabValue] = Field(..., description="List of lab values to interpret")
+    gender: str | None = Field(None, description="Patient gender ('male' or 'female') for gender-specific ranges")
+
+
+class LabInterpretResult(BaseModel):
+    """Interpretation result for a single lab value."""
+
+    test_name: str = Field(..., description="Full test name")
+    value: float = Field(..., description="The input value")
+    unit: str = Field(..., description="Unit of measurement")
+    level: str = Field(..., description="Interpretation level (critical_low, low, normal, high, critical_high)")
+    reference_range: str = Field(..., description="Normal reference range (e.g., '136-145')")
+    is_critical: bool = Field(..., description="Whether the value is critically abnormal")
+    clinical_significance: str = Field(..., description="Clinical significance of the value")
+    possible_causes: list[str] = Field(..., description="Possible causes of abnormal value")
+    recommended_actions: list[str] = Field(..., description="Recommended clinical actions")
+
+
+class LabInterpretResponse(BaseModel):
+    """Response from lab interpretation."""
+
+    interpretations: list[LabInterpretResult] = Field(..., description="Interpretations for each lab value")
+    unrecognized_tests: list[str] = Field(..., description="Tests that were not recognized")
+    total_interpreted: int = Field(..., description="Number of tests successfully interpreted")
+    abnormal_count: int = Field(..., description="Number of abnormal values")
+    critical_count: int = Field(..., description="Number of critical values")
+    interpret_time_ms: float = Field(..., description="Time taken for interpretation in ms")
+    database_stats: dict = Field(..., description="Lab reference database statistics")
+
+
+@router.post(
+    "/clinical/lab-interpret",
+    response_model=LabInterpretResponse,
+    summary="Interpret laboratory values",
+    description="Interpret lab results with reference ranges and clinical guidance.",
+)
+async def interpret_lab_values(
+    request: LabInterpretRequest,
+) -> LabInterpretResponse:
+    """Interpret laboratory values against reference ranges.
+
+    This endpoint provides clinical interpretation for lab values including:
+    - Normal/abnormal/critical classification
+    - Reference ranges (with gender-specific values when applicable)
+    - Possible causes of abnormal values
+    - Recommended clinical actions
+
+    Supports common lab tests from:
+    - Basic Metabolic Panel (Na, K, Cl, CO2, BUN, Cr, Glucose)
+    - Complete Metabolic Panel (plus ALT, AST, ALP, bilirubin, albumin)
+    - Complete Blood Count (WBC, Hgb, Hct, Plt, MCV)
+    - Coagulation (PT, INR, PTT)
+    - Cardiac markers (Troponin, BNP)
+    - Lipid panel (TC, LDL, HDL, TG)
+    - Thyroid (TSH, FT4, FT3)
+    - And more...
+
+    Args:
+        request: Lab values to interpret and optional patient gender.
+
+    Returns:
+        LabInterpretResponse with interpretations and statistics.
+    """
+    import time
+    from app.services.lab_reference import get_lab_reference_service
+
+    start_time = time.perf_counter()
+
+    service = get_lab_reference_service()
+
+    interpretations: list[LabInterpretResult] = []
+    unrecognized: list[str] = []
+    abnormal_count = 0
+    critical_count = 0
+
+    for lab in request.values:
+        result = service.interpret(lab.test, lab.value, request.gender)
+
+        if result is None:
+            unrecognized.append(lab.test)
+            continue
+
+        if result.level.value != "normal":
+            abnormal_count += 1
+
+        if result.is_critical:
+            critical_count += 1
+
+        interpretations.append(
+            LabInterpretResult(
+                test_name=result.test_name,
+                value=result.value,
+                unit=result.unit,
+                level=result.level.value,
+                reference_range=result.reference_range,
+                is_critical=result.is_critical,
+                clinical_significance=result.clinical_significance,
+                possible_causes=result.possible_causes,
+                recommended_actions=result.recommended_actions,
+            )
+        )
+
+    interpret_time_ms = (time.perf_counter() - start_time) * 1000
+
+    return LabInterpretResponse(
+        interpretations=interpretations,
+        unrecognized_tests=unrecognized,
+        total_interpreted=len(interpretations),
+        abnormal_count=abnormal_count,
+        critical_count=critical_count,
+        interpret_time_ms=round(interpret_time_ms, 2),
+        database_stats=service.get_stats(),
+    )

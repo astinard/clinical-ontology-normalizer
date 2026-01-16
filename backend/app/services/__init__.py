@@ -75,6 +75,31 @@ from app.services.nlp_ensemble import (
     get_ensemble_nlp_service,
     reset_ensemble_nlp_service,
 )
+from app.services.vocabulary_enhanced import (
+    EnhancedVocabularyService,
+    get_enhanced_vocabulary_service,
+    reset_enhanced_vocabulary_service,
+    ABBREVIATION_EXPANSIONS,
+    SYNONYM_PATTERNS,
+)
+from app.services.drug_interactions import (
+    DrugInteraction,
+    DrugInteractionService,
+    InteractionCheckResult,
+    InteractionSeverity,
+    InteractionType,
+    get_drug_interaction_service,
+    reset_drug_interaction_service,
+)
+from app.services.lab_reference import (
+    InterpretationLevel,
+    LabCategory,
+    LabInterpretation,
+    LabReferenceService,
+    ReferenceRange,
+    get_lab_reference_service,
+    reset_lab_reference_service,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -127,4 +152,23 @@ __all__ = [
     "EnsembleResult",
     "get_ensemble_nlp_service",
     "reset_ensemble_nlp_service",
+    "EnhancedVocabularyService",
+    "get_enhanced_vocabulary_service",
+    "reset_enhanced_vocabulary_service",
+    "ABBREVIATION_EXPANSIONS",
+    "SYNONYM_PATTERNS",
+    "DrugInteraction",
+    "DrugInteractionService",
+    "InteractionCheckResult",
+    "InteractionSeverity",
+    "InteractionType",
+    "get_drug_interaction_service",
+    "reset_drug_interaction_service",
+    "InterpretationLevel",
+    "LabCategory",
+    "LabInterpretation",
+    "LabReferenceService",
+    "ReferenceRange",
+    "get_lab_reference_service",
+    "reset_lab_reference_service",
 ]

@@ -1,4 +1,4 @@
-.PHONY: test lint typecheck dev clean help docker-up docker-down docker-build docker-logs docker-dev docker-migrate
+.PHONY: test lint typecheck dev dev-backend dev-worker clean help docker-up docker-down docker-build docker-logs docker-dev docker-migrate
 
 # Default target
 help:
@@ -6,11 +6,13 @@ help:
 	@echo ""
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "Targets:"
+	@echo "Development targets:"
+	@echo "  dev           Start development servers (shows commands)"
+	@echo "  dev-backend   Start FastAPI backend with auto-reload"
+	@echo "  dev-worker    Start RQ worker for background jobs"
 	@echo "  test          Run all tests (backend + frontend)"
 	@echo "  lint          Run all linters"
 	@echo "  typecheck     Run type checkers"
-	@echo "  dev           Start development servers (local)"
 	@echo "  clean         Clean build artifacts"
 	@echo ""
 	@echo "Docker targets:"
@@ -66,11 +68,25 @@ typecheck-frontend:
 		echo "Frontend not yet configured"; \
 	fi
 
-# Start development servers
+# Start development servers (shows commands)
 dev:
 	@echo "Starting development servers..."
-	@echo "Backend: cd backend && uvicorn app.main:app --reload"
-	@echo "Frontend: cd frontend && npm run dev"
+	@echo ""
+	@echo "Run these in separate terminals:"
+	@echo "  Backend:  make dev-backend"
+	@echo "  Worker:   make dev-worker"
+	@echo "  Frontend: cd frontend && npm run dev"
+	@echo ""
+
+# Start FastAPI backend with auto-reload
+dev-backend:
+	@echo "Starting FastAPI backend..."
+	cd backend && uv run uvicorn app.main:app --reload
+
+# Start RQ worker for background job processing
+dev-worker:
+	@echo "Starting RQ worker..."
+	cd backend && ./scripts/run_worker.sh
 
 # Clean build artifacts
 clean:

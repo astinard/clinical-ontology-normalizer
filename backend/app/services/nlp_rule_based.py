@@ -82,6 +82,16 @@ class RuleBasedNLPService(BaseNLPService):
     # Minimum term length to extract (helps reduce noise)
     MIN_TERM_LENGTH = 2
 
+    # Confidence scoring parameters
+    # These weights sum to 1.0 and determine how much each factor contributes
+    CONFIDENCE_WEIGHTS = {
+        "base": 0.4,           # Base match confidence
+        "term_length": 0.2,    # Longer terms = higher confidence
+        "section_fit": 0.2,    # Section-domain affinity
+        "specificity": 0.1,    # Concept specificity (has OMOP ID)
+        "case_match": 0.1,     # Exact case match bonus
+    }
+
     # Common patterns for clinical terms not in vocabulary
     CLINICAL_PATTERNS = [
         # Vital signs with values
@@ -309,12 +319,15 @@ class RuleBasedNLPService(BaseNLPService):
             clinical_section = get_section_at_offset(start)
             section_name = clinical_section.value if clinical_section != ClinicalSection.UNKNOWN else None
 
-            # Calculate confidence with section-domain modifier
-            base_confidence = 0.8
-            confidence_modifier = self._section_parser.calculate_confidence_modifier(
-                clinical_section, domain_id or "Observation"
+            # Calculate comprehensive confidence score
+            confidence = self._calculate_confidence(
+                matched_text=matched_text,
+                lexical_variant=lexical_variant,
+                concept_id=concept_id,
+                domain_id=domain_id,
+                clinical_section=clinical_section,
+                assertion=assertion,
             )
-            confidence = min(1.0, base_confidence * confidence_modifier)
 
             mention = ExtractedMention(
                 text=matched_text,
@@ -466,3 +479,79 @@ class RuleBasedNLPService(BaseNLPService):
                 return Experiencer.FAMILY
 
         return Experiencer.PATIENT
+
+    def _calculate_confidence(
+        self,
+        matched_text: str,
+        lexical_variant: str,
+        concept_id: int | None,
+        domain_id: str | None,
+        clinical_section: ClinicalSection,
+        assertion: Assertion,
+    ) -> float:
+        """Calculate comprehensive confidence score for an extraction.
+
+        Combines multiple signals into a final confidence score:
+        - Base match quality (vocabulary match)
+        - Term length (longer terms are more specific)
+        - Section-domain fit (term type matches section expectations)
+        - Specificity (has OMOP concept ID = known entity)
+        - Case match (exact case = higher quality match)
+
+        Args:
+            matched_text: The actual text matched in the document.
+            lexical_variant: The vocabulary term that matched.
+            concept_id: OMOP concept ID if available.
+            domain_id: OMOP domain (Condition, Drug, etc.).
+            clinical_section: The clinical section where match was found.
+            assertion: The assertion status (affects final score).
+
+        Returns:
+            Confidence score between 0.0 and 1.0.
+        """
+        weights = self.CONFIDENCE_WEIGHTS
+        score = 0.0
+
+        # 1. Base confidence (vocabulary match = high quality)
+        score += weights["base"] * 1.0
+
+        # 2. Term length scoring (longer = more specific)
+        # Scale: 2 chars = 0.3, 5 chars = 0.6, 10+ chars = 1.0
+        term_len = len(matched_text)
+        if term_len >= 10:
+            length_score = 1.0
+        elif term_len >= 5:
+            length_score = 0.6 + (term_len - 5) * 0.08  # 0.6 to 1.0
+        else:
+            length_score = 0.3 + (term_len - 2) * 0.1  # 0.3 to 0.6
+        score += weights["term_length"] * length_score
+
+        # 3. Section-domain fit
+        section_modifier = self._section_parser.calculate_confidence_modifier(
+            clinical_section, domain_id or "Observation"
+        )
+        # Normalize modifier from 0.8-1.1 range to 0.0-1.0
+        section_score = (section_modifier - 0.8) / 0.3
+        section_score = max(0.0, min(1.0, section_score))
+        score += weights["section_fit"] * section_score
+
+        # 4. Specificity (has concept_id = known OMOP entity)
+        specificity_score = 1.0 if concept_id is not None else 0.5
+        score += weights["specificity"] * specificity_score
+
+        # 5. Case match bonus (exact match = higher quality)
+        if matched_text == lexical_variant:
+            case_score = 1.0
+        elif matched_text.lower() == lexical_variant.lower():
+            case_score = 0.8  # Case-insensitive match
+        else:
+            case_score = 0.5  # Partial/fuzzy match
+        score += weights["case_match"] * case_score
+
+        # Apply assertion penalty for uncertain extractions
+        # POSSIBLE assertions get slight reduction (uncertainty = less confident)
+        if assertion == Assertion.POSSIBLE:
+            score *= 0.9
+
+        # Clamp to valid range
+        return max(0.0, min(1.0, score))

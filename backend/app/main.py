@@ -1,5 +1,6 @@
 """FastAPI application for Clinical Ontology Normalizer."""
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -13,6 +14,9 @@ from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.core.queue import clear_queues
 from app.core.redis import close_redis
+from app.services.vocabulary import get_vocabulary_service, preload_vocabulary
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -20,13 +24,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager.
 
     Handles startup and shutdown events:
-    - Startup: Initialize database connection
+    - Startup: Initialize database connection, preload vocabulary
     - Shutdown: Close database and Redis connections, clear queues
     """
     # Startup
     if settings.debug:
         await init_db()
+
+    # Preload vocabulary service (singleton) for fast NLP extraction
+    vocab_stats = preload_vocabulary()
+    logger.info(
+        f"Vocabulary preloaded: {vocab_stats['concept_count']} concepts, "
+        f"{vocab_stats['term_count']} terms in {vocab_stats['load_time_ms']}ms"
+    )
+
     yield
+
     # Shutdown
     clear_queues()
     close_redis()
@@ -62,13 +75,18 @@ app.include_router(search_router)
 async def health_check() -> dict[str, Any]:
     """Health check endpoint.
 
-    Returns service status and basic info for monitoring.
+    Returns service status and basic info for monitoring,
+    including vocabulary service status.
     """
+    vocab = get_vocabulary_service()
+    vocab_stats = vocab.get_stats()
+
     return {
         "status": "healthy",
         "service": "clinical-ontology-normalizer",
         "version": "0.1.0",
         "timestamp": datetime.now(UTC).isoformat(),
+        "vocabulary": vocab_stats,
     }
 
 

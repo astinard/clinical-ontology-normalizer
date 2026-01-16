@@ -2,17 +2,26 @@
 
 Loads the local OMOP vocabulary fixture and clinical abbreviations,
 providing lookup functions for concept matching.
+
+This module uses a singleton pattern to ensure vocabulary is loaded
+only once and shared across all services.
 """
 
 import json
 import logging
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from threading import Lock
 from typing import ClassVar
 
 from app.schemas.base import Domain
 
 logger = logging.getLogger(__name__)
+
+# Singleton instance and lock for thread-safe initialization
+_vocabulary_instance: "VocabularyService | None" = None
+_vocabulary_lock = Lock()
 
 
 @dataclass
@@ -67,6 +76,7 @@ class VocabularyService:
         self._concepts: list[OMOPConcept] = []
         self._synonym_index: dict[str, list[OMOPConcept]] = {}
         self._loaded = False
+        self._load_time_ms: float = 0.0
 
     def _find_fixtures_dir(self) -> Path:
         """Find the fixtures directory."""
@@ -95,6 +105,8 @@ class VocabularyService:
         """Load concepts from vocabulary fixture and clinical abbreviations."""
         if self._loaded:
             return
+
+        start_time = time.perf_counter()
 
         self._concepts = []
         self._synonym_index = {}
@@ -139,9 +151,11 @@ class VocabularyService:
                     self._synonym_index[key].append(concept)
 
         self._loaded = True
+        self._load_time_ms = (time.perf_counter() - start_time) * 1000
+
         logger.info(
             f"Vocabulary loaded: {len(self._concepts)} concepts, "
-            f"{len(self._synonym_index)} unique terms"
+            f"{len(self._synonym_index)} unique terms in {self._load_time_ms:.2f}ms"
         )
 
     def _load_clinical_abbreviations(self) -> None:
@@ -301,3 +315,79 @@ class VocabularyService:
         }
         domain_str = domain_str_map.get(domain, "")
         return [c for c in self._concepts if c.domain_id == domain_str]
+
+    @property
+    def load_time_ms(self) -> float:
+        """Get the vocabulary load time in milliseconds."""
+        return self._load_time_ms
+
+    def get_stats(self) -> dict:
+        """Get vocabulary statistics for health checks.
+
+        Returns:
+            Dictionary with vocab stats including concept count, term count,
+            load time, and loaded status.
+        """
+        if not self._loaded:
+            return {
+                "loaded": False,
+                "concept_count": 0,
+                "term_count": 0,
+                "load_time_ms": 0,
+            }
+        return {
+            "loaded": True,
+            "concept_count": len(self._concepts),
+            "term_count": len(self._synonym_index),
+            "load_time_ms": round(self._load_time_ms, 2),
+        }
+
+
+def get_vocabulary_service() -> VocabularyService:
+    """Get the singleton VocabularyService instance.
+
+    This function provides thread-safe access to a single VocabularyService
+    instance that is shared across all services. The vocabulary is loaded
+    lazily on first access.
+
+    Returns:
+        The singleton VocabularyService instance.
+
+    Example:
+        vocab = get_vocabulary_service()
+        matches = vocab.search("hypertension")
+    """
+    global _vocabulary_instance
+
+    if _vocabulary_instance is None:
+        with _vocabulary_lock:
+            # Double-check locking pattern
+            if _vocabulary_instance is None:
+                logger.info("Creating singleton VocabularyService instance")
+                _vocabulary_instance = VocabularyService()
+                _vocabulary_instance.load()
+
+    return _vocabulary_instance
+
+
+def preload_vocabulary() -> dict:
+    """Preload vocabulary at application startup.
+
+    Call this during application startup (lifespan handler) to ensure
+    vocabulary is loaded before handling requests.
+
+    Returns:
+        Dictionary with load statistics.
+    """
+    vocab = get_vocabulary_service()
+    return vocab.get_stats()
+
+
+def reset_vocabulary_singleton() -> None:
+    """Reset the singleton instance (for testing only).
+
+    This should only be used in tests to ensure clean state.
+    """
+    global _vocabulary_instance
+    with _vocabulary_lock:
+        _vocabulary_instance = None

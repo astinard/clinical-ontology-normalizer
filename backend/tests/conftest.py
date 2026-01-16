@@ -8,6 +8,20 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.database import get_db
 from app.main import app
+from app.services.vocabulary import reset_vocabulary_singleton
+
+
+@pytest.fixture(autouse=True)
+def reset_vocab_singleton() -> None:
+    """Reset the vocabulary singleton before each test module.
+
+    This ensures clean state for tests and prevents test interference.
+    The singleton is automatically reset at the start of each test.
+    """
+    reset_vocabulary_singleton()
+    yield
+    # Also reset after test to leave clean state
+    reset_vocabulary_singleton()
 
 
 @pytest.fixture

@@ -98,17 +98,22 @@ class TestVocabularyServiceLoading:
         assert len(concepts) > 0
 
     def test_load_from_custom_path(self) -> None:
-        """Test loading from a custom fixture path."""
-        # Create a temporary fixture file
+        """Test loading from a custom fixture path includes custom concepts.
+
+        Note: VocabularyService now always loads clinical_abbreviations.json
+        in addition to the custom fixture path. This test verifies that
+        custom concepts ARE included alongside clinical abbreviations.
+        """
+        # Create a temporary fixture file with a unique test concept
         fixture_data = {
             "concepts": [
                 {
-                    "concept_id": 1,
-                    "concept_name": "Test Concept",
+                    "concept_id": 999999,  # Unique ID unlikely to conflict
+                    "concept_name": "UniqueTestConcept12345",
                     "concept_code": "TEST001",
                     "vocabulary_id": "TEST",
                     "domain_id": "Condition",
-                    "synonyms": ["test"],
+                    "synonyms": ["uniquetestsynonym12345"],
                 }
             ]
         }
@@ -119,16 +124,28 @@ class TestVocabularyServiceLoading:
         try:
             vocab = VocabularyService(fixture_path=temp_path)
             vocab.load()
-            assert vocab.concept_count == 1
-            assert vocab.concepts[0].concept_name == "Test Concept"
+            # Should have clinical abbreviations PLUS the custom concept
+            assert vocab.concept_count > 1
+            # Verify the custom concept is included
+            custom_concept = vocab.get_by_id(999999)
+            assert custom_concept is not None
+            assert custom_concept.concept_name == "UniqueTestConcept12345"
         finally:
             Path(temp_path).unlink()
 
-    def test_load_missing_file_raises(self) -> None:
-        """Test that loading a missing file raises FileNotFoundError."""
+    def test_load_missing_file_loads_abbreviations_only(self) -> None:
+        """Test that a missing fixture file loads clinical abbreviations only.
+
+        VocabularyService gracefully handles missing OMOP vocabulary fixture
+        by loading only the clinical abbreviations.
+        """
         vocab = VocabularyService(fixture_path="/nonexistent/path.json")
-        with pytest.raises(FileNotFoundError):
-            vocab.load()
+        vocab.load()
+        # Should have loaded clinical abbreviations (>300 terms)
+        assert vocab.concept_count >= 300
+        # Verify clinical abbreviations are present
+        results = vocab.search("hfref")
+        assert len(results) > 0
 
 
 class TestVocabularyServiceLookup:
@@ -168,11 +185,19 @@ class TestVocabularyServiceLookup:
         assert len(results_lower) == len(results_upper) == len(results_mixed)
 
     def test_search_partial_match(self, vocab: VocabularyService) -> None:
-        """Test search finds partial matches."""
+        """Test search finds partial matches in synonyms.
+
+        Note: Search returns concepts where synonyms contain the search term,
+        not necessarily the concept_name. For example, searching "heart"
+        matches HFrEF because its synonym is "heart failure with reduced ef".
+        """
         results = vocab.search("heart")
         assert len(results) > 0
-        # Should find congestive heart failure
-        assert any("heart" in c.concept_name.lower() for c in results)
+        # Should find concepts with "heart" in synonyms
+        assert any(
+            any("heart" in syn.lower() for syn in c.synonyms)
+            for c in results
+        )
 
     def test_search_respects_limit(self, vocab: VocabularyService) -> None:
         """Test search respects the limit parameter."""

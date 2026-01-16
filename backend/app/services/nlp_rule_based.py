@@ -12,7 +12,7 @@ from uuid import UUID
 
 from app.schemas.base import Assertion, Experiencer, Temporality
 from app.services.nlp import BaseNLPService, ExtractedMention
-from app.services.vocabulary import VocabularyService
+from app.services.vocabulary import VocabularyService, get_vocabulary_service
 
 logger = logging.getLogger(__name__)
 
@@ -154,8 +154,8 @@ class RuleBasedNLPService(BaseNLPService):
 
         Args:
             vocabulary_service: Optional vocabulary service for term lookup.
-                               If not provided, uses filtered database vocabulary
-                               if USE_DB_VOCABULARY=true, else file-based fixture.
+                               If not provided, uses the singleton file-based
+                               vocabulary (or filtered database if USE_DB_VOCABULARY=true).
         """
         super().__init__()
 
@@ -168,8 +168,8 @@ class RuleBasedNLPService(BaseNLPService):
             logger.info("Using filtered database vocabulary service for NLP extraction")
             self._vocabulary_service = FilteredNLPVocabularyService()
         else:
-            # Fall back to file-based fixture
-            self._vocabulary_service = VocabularyService()
+            # Use singleton vocabulary service (pre-loaded at app startup)
+            self._vocabulary_service = get_vocabulary_service()
 
         # Pattern info: (pattern, synonym, domain_id, concept_id)
         self._term_patterns: list[tuple[re.Pattern[str], str, str, int]] = []

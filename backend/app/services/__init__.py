@@ -43,7 +43,12 @@ from app.services.mapping_sql import SQLMappingService
 from app.services.nlp_vocabulary import FilteredNLPVocabularyService
 from app.services.nlp import BaseNLPService, ExtractedMention, NLPServiceInterface
 from app.services.nlp_rule_based import RuleBasedNLPService
-from app.services.vocabulary import VocabularyService
+from app.services.vocabulary import (
+    VocabularyService,
+    get_vocabulary_service,
+    preload_vocabulary,
+    reset_vocabulary_singleton,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -70,6 +75,9 @@ __all__ = [
     "RuleBasedNLPService",
     "SQLMappingService",
     "VocabularyService",
+    "get_vocabulary_service",
+    "preload_vocabulary",
+    "reset_vocabulary_singleton",
     "BaseOMOPExporter",
     "DatabaseOMOPExporter",
     "NoteExport",

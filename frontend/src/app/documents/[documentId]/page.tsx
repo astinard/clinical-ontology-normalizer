@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getDocument, Document } from "@/lib/api";
+import {
+  getDocument,
+  getDocumentMentions,
+  previewExtraction,
+  Document,
+  Mention,
+  ExtractedMentionPreview,
+} from "@/lib/api";
+import {
+  MentionHighlighter,
+  MentionLegend,
+  MentionDetail,
+} from "@/components/MentionHighlighter";
 
 const STATUS_COLORS: Record<string, string> = {
   queued: "bg-yellow-500",
@@ -22,11 +34,26 @@ const STATUS_COLORS: Record<string, string> = {
   failed: "bg-red-500",
 };
 
+interface MentionSpan {
+  text: string;
+  start_offset: number;
+  end_offset: number;
+  assertion: string;
+  temporality: string;
+  confidence: number;
+  section: string | null;
+  domain?: string | null;
+}
+
 export default function DocumentViewerPage() {
   const params = useParams();
   const documentId = params.documentId as string;
   const [document, setDocument] = useState<Document | null>(null);
+  const [mentions, setMentions] = useState<MentionSpan[]>([]);
+  const [selectedMention, setSelectedMention] = useState<MentionSpan | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingMentions, setIsLoadingMentions] = useState(false);
+  const [extractionTime, setExtractionTime] = useState<number | null>(null);
 
   useEffect(() => {
     if (!documentId) return;
@@ -36,6 +63,26 @@ export default function DocumentViewerPage() {
         const doc = await getDocument(documentId);
         setDocument(doc);
         setError(null);
+
+        // If document is completed, fetch stored mentions
+        if (doc.status === "completed") {
+          try {
+            const dbMentions = await getDocumentMentions(documentId);
+            const mentionSpans: MentionSpan[] = dbMentions.map((m) => ({
+              text: m.text,
+              start_offset: m.start_offset,
+              end_offset: m.end_offset,
+              assertion: m.assertion,
+              temporality: m.temporality,
+              confidence: m.confidence,
+              section: m.section,
+              domain: null, // DB mentions don't have domain stored in Mention table
+            }));
+            setMentions(mentionSpans);
+          } catch {
+            // No mentions yet, that's ok
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch document:", err);
         setError("Failed to fetch document. Is the backend running?");
@@ -44,6 +91,46 @@ export default function DocumentViewerPage() {
 
     fetchDocument();
   }, [documentId]);
+
+  const handlePreviewExtraction = useCallback(async () => {
+    if (!document) return;
+
+    setIsLoadingMentions(true);
+    setSelectedMention(null);
+    try {
+      const result = await previewExtraction(document.text, document.note_type);
+      const mentionSpans: MentionSpan[] = result.mentions.map((m) => ({
+        text: m.text,
+        start_offset: m.start_offset,
+        end_offset: m.end_offset,
+        assertion: m.assertion,
+        temporality: m.temporality,
+        confidence: m.confidence,
+        section: m.section,
+        domain: m.domain,
+      }));
+      setMentions(mentionSpans);
+      setExtractionTime(result.extraction_time_ms);
+    } catch (err) {
+      console.error("Failed to preview extraction:", err);
+    } finally {
+      setIsLoadingMentions(false);
+    }
+  }, [document]);
+
+  const handleMentionClick = useCallback((mention: MentionSpan) => {
+    setSelectedMention(mention);
+  }, []);
+
+  // Group mentions by domain for summary
+  const mentionsByDomain = mentions.reduce(
+    (acc, m) => {
+      const domain = m.domain || "Unknown";
+      acc[domain] = (acc[domain] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
@@ -70,7 +157,7 @@ export default function DocumentViewerPage() {
             </CardContent>
           </Card>
         ) : document ? (
-          <div className="mx-auto max-w-4xl space-y-6">
+          <div className="mx-auto max-w-5xl space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -90,41 +177,149 @@ export default function DocumentViewerPage() {
             <Tabs defaultValue="document" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="document">Document</TabsTrigger>
-                <TabsTrigger value="mentions">Mentions</TabsTrigger>
+                <TabsTrigger value="mentions">
+                  Mentions {mentions.length > 0 && `(${mentions.length})`}
+                </TabsTrigger>
                 <TabsTrigger value="metadata">Metadata</TabsTrigger>
               </TabsList>
 
               <TabsContent value="document">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Clinical Note</CardTitle>
-                    <CardDescription>
-                      Original document text with highlighted mentions (when available)
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Clinical Note</CardTitle>
+                        <CardDescription>
+                          {mentions.length > 0
+                            ? `${mentions.length} mentions highlighted`
+                            : "Click 'Extract Mentions' to highlight clinical terms"}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {extractionTime !== null && (
+                          <span className="text-sm text-zinc-500">
+                            {extractionTime.toFixed(1)}ms
+                          </span>
+                        )}
+                        <Button
+                          onClick={handlePreviewExtraction}
+                          disabled={isLoadingMentions}
+                          size="sm"
+                        >
+                          {isLoadingMentions ? (
+                            <>
+                              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900" />
+                              Extracting...
+                            </>
+                          ) : (
+                            "Extract Mentions"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    {mentions.length > 0 && <MentionLegend className="mt-4" />}
                   </CardHeader>
                   <CardContent>
-                    <div className="whitespace-pre-wrap rounded-lg bg-zinc-100 p-4 font-mono text-sm dark:bg-zinc-800">
-                      {document.text}
-                    </div>
+                    <MentionHighlighter
+                      text={document.text}
+                      mentions={mentions}
+                      onMentionClick={handleMentionClick}
+                      selectedMention={selectedMention}
+                    />
                   </CardContent>
                 </Card>
+
+                {selectedMention && (
+                  <Card className="mt-4">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Mention Details</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <MentionDetail mention={selectedMention} />
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="mentions">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Extracted Mentions</CardTitle>
-                    <CardDescription>
-                      Clinical mentions extracted from the document text
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Extracted Mentions</CardTitle>
+                        <CardDescription>
+                          {mentions.length > 0
+                            ? `${mentions.length} clinical terms extracted`
+                            : "No mentions extracted yet"}
+                        </CardDescription>
+                      </div>
+                      {mentions.length === 0 && (
+                        <Button onClick={handlePreviewExtraction} disabled={isLoadingMentions}>
+                          Extract Now
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8 text-zinc-500">
-                      <p>Mention extraction data will be displayed here.</p>
-                      <p className="text-sm mt-2">
-                        This feature requires additional API endpoints.
-                      </p>
-                    </div>
+                    {mentions.length > 0 ? (
+                      <div className="space-y-6">
+                        {/* Summary by domain */}
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(mentionsByDomain)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([domain, count]) => (
+                              <Badge key={domain} variant="outline">
+                                {domain}: {count}
+                              </Badge>
+                            ))}
+                        </div>
+
+                        {/* Mention table */}
+                        <div className="rounded-lg border">
+                          <table className="w-full text-sm">
+                            <thead className="border-b bg-zinc-50 dark:bg-zinc-800">
+                              <tr>
+                                <th className="px-4 py-2 text-left font-medium">Text</th>
+                                <th className="px-4 py-2 text-left font-medium">Domain</th>
+                                <th className="px-4 py-2 text-left font-medium">Assertion</th>
+                                <th className="px-4 py-2 text-left font-medium">Section</th>
+                                <th className="px-4 py-2 text-right font-medium">Confidence</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {mentions.map((m, i) => (
+                                <tr
+                                  key={i}
+                                  className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"
+                                  onClick={() => setSelectedMention(m)}
+                                >
+                                  <td className="px-4 py-2 font-medium">{m.text}</td>
+                                  <td className="px-4 py-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {m.domain || "Unknown"}
+                                    </Badge>
+                                  </td>
+                                  <td className="px-4 py-2 capitalize">{m.assertion}</td>
+                                  <td className="px-4 py-2 text-zinc-500">
+                                    {m.section || "-"}
+                                  </td>
+                                  <td className="px-4 py-2 text-right">
+                                    {(m.confidence * 100).toFixed(0)}%
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-zinc-500">
+                        <p>Click &quot;Extract Now&quot; to run NLP extraction.</p>
+                        <p className="text-sm mt-2">
+                          This will identify clinical terms in the document.
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

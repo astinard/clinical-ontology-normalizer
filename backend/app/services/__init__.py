@@ -202,6 +202,16 @@ from app.services.hcc_analyzer import (
     get_hcc_analyzer_service,
     reset_hcc_analyzer_service,
 )
+from app.services.nlp_advanced import (
+    AbbreviationContext,
+    AdvancedNLPConfig,
+    AdvancedNLPService,
+    EnhancedMention,
+    Laterality,
+    MentionEnhancement,
+    get_advanced_nlp_service,
+    reset_advanced_nlp_service,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -355,4 +365,12 @@ __all__ = [
     "HCCOpportunity",
     "get_hcc_analyzer_service",
     "reset_hcc_analyzer_service",
+    "AbbreviationContext",
+    "AdvancedNLPConfig",
+    "AdvancedNLPService",
+    "EnhancedMention",
+    "Laterality",
+    "MentionEnhancement",
+    "get_advanced_nlp_service",
+    "reset_advanced_nlp_service",
 ]

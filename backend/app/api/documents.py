@@ -2134,7 +2134,7 @@ async def analyze_billing_optimization(
                 current_code=f.current_code,
                 recommended_code=f.recommended_code,
                 revenue_impact=f.revenue_impact,
-                action_required=f.action_required,
+                action_required="; ".join(f.action_items) if f.action_items else "Review and verify coding",
                 cer_citation=cer_response,
             )
         )
@@ -2151,6 +2151,204 @@ async def analyze_billing_optimization(
         priority_actions=result.priority_actions,
         overall_assessment=result.overall_assessment,
         analysis_time_ms=round(analysis_time_ms, 2),
+    )
+
+
+# ============================================================================
+# Coding Query Generator Endpoints
+# ============================================================================
+
+
+class CodingQueryRequest(BaseModel):
+    """Request body for coding query generation."""
+
+    clinical_text: str = Field(
+        ...,
+        description="Clinical documentation text to analyze",
+        min_length=10,
+    )
+    extracted_mentions: list[dict] | None = Field(
+        None,
+        description="Pre-extracted NLP mentions (optional)",
+    )
+    encounter_id: str | None = Field(None, description="Encounter identifier")
+    patient_id: str | None = Field(None, description="Patient identifier")
+    encounter_type: str | None = Field(
+        None,
+        description="Type of encounter (inpatient, outpatient, emergency)",
+    )
+
+
+class QueryResponseOptionResponse(BaseModel):
+    """A response option for a query."""
+
+    label: str
+    value: str
+    icd10_code: str | None = None
+    cpt_code: str | None = None
+
+
+class QueryCERResponse(BaseModel):
+    """CER citation for a query."""
+
+    claim: str
+    evidence: list[str]
+    reasoning: str
+    strength: str
+    regulatory_basis: list[str] = []
+    coding_references: list[str] = []
+
+
+class CodingQueryResponse(BaseModel):
+    """A single coding query."""
+
+    query_id: str
+    priority: str
+    status: str
+    question: str
+    clinical_context: str
+    response_options: list[QueryResponseOptionResponse]
+    allows_free_text: bool = True
+    gap_category: str
+    gap_severity: str
+    finding: str
+    coding_impacts: list[str] = []
+    affected_icd10_codes: list[str] = []
+    affected_cpt_codes: list[str] = []
+    estimated_revenue_impact: float = 0.0
+    quality_measures_affected: list[str] = []
+    cer_citation: QueryCERResponse | None = None
+
+
+class CodingQueryBatchResponse(BaseModel):
+    """Response for coding query generation."""
+
+    batch_id: str
+    encounter_id: str | None = None
+    patient_id: str | None = None
+    queries: list[CodingQueryResponse]
+    total_queries: int
+    by_priority: dict[str, int]
+    by_category: dict[str, int]
+    total_estimated_revenue_impact: float
+    drg_impact_possible: bool
+    hcc_impact_possible: bool
+    quality_measures_at_risk: list[str]
+    documentation_score: int
+    generation_time_ms: float
+
+
+@router.post(
+    "/clinical/coding-queries",
+    response_model=CodingQueryBatchResponse,
+    tags=["clinical-decision-support"],
+    summary="Generate coding queries for documentation clarification",
+)
+async def generate_coding_queries(
+    request: CodingQueryRequest,
+) -> CodingQueryBatchResponse:
+    """
+    Generate structured coding queries for Clinical Documentation Improvement (CDI).
+
+    Analyzes clinical documentation to identify:
+    - Ambiguous diagnoses needing clarification (diabetes type, HF type)
+    - Missing specificity (laterality, acuity, stage)
+    - Documentation gaps affecting coding accuracy
+    - Quality measure opportunities
+
+    Returns prioritized queries with:
+    - CER citations explaining why clarification is needed
+    - Response options with associated ICD-10/CPT codes
+    - Revenue impact estimates
+    - Quality measure implications
+
+    Queries are designed to be sent to providers for documentation improvement.
+    """
+    import time
+    from app.services.coding_query_generator import get_coding_query_generator_service
+
+    start_time = time.time()
+
+    service = get_coding_query_generator_service()
+
+    # Build encounter context
+    encounter_context = {
+        "encounter_id": request.encounter_id,
+        "patient_id": request.patient_id,
+        "encounter_type": request.encounter_type or "",
+    }
+
+    # Generate queries
+    batch = service.generate_queries(
+        clinical_text=request.clinical_text,
+        extracted_mentions=request.extracted_mentions,
+        encounter_context=encounter_context,
+    )
+
+    generation_time_ms = (time.time() - start_time) * 1000
+
+    # Convert to response format
+    queries = []
+    for q in batch.queries:
+        # Convert response options
+        response_options = []
+        for opt in q.response_options:
+            response_options.append(
+                QueryResponseOptionResponse(
+                    label=opt.label,
+                    value=opt.value,
+                    icd10_code=opt.icd10_code,
+                    cpt_code=opt.cpt_code,
+                )
+            )
+
+        # Convert CER citation
+        cer = None
+        if q.cer_citation:
+            cer = QueryCERResponse(
+                claim=q.cer_citation.claim,
+                evidence=q.cer_citation.evidence,
+                reasoning=q.cer_citation.reasoning,
+                strength=q.cer_citation.strength,
+                regulatory_basis=q.cer_citation.regulatory_basis,
+                coding_references=q.cer_citation.coding_references,
+            )
+
+        queries.append(
+            CodingQueryResponse(
+                query_id=q.query_id,
+                priority=q.priority.value,
+                status=q.status.value,
+                question=q.question,
+                clinical_context=q.clinical_context,
+                response_options=response_options,
+                allows_free_text=q.allows_free_text,
+                gap_category=q.gap_category.value,
+                gap_severity=q.gap_severity.value,
+                finding=q.finding,
+                coding_impacts=[i.value for i in q.coding_impacts],
+                affected_icd10_codes=q.affected_icd10_codes,
+                affected_cpt_codes=q.affected_cpt_codes,
+                estimated_revenue_impact=q.estimated_revenue_impact,
+                quality_measures_affected=q.quality_measures_affected,
+                cer_citation=cer,
+            )
+        )
+
+    return CodingQueryBatchResponse(
+        batch_id=batch.batch_id,
+        encounter_id=batch.encounter_id,
+        patient_id=batch.patient_id,
+        queries=queries,
+        total_queries=batch.total_queries,
+        by_priority=batch.by_priority,
+        by_category=batch.by_category,
+        total_estimated_revenue_impact=batch.total_estimated_revenue_impact,
+        drg_impact_possible=batch.drg_impact_possible,
+        hcc_impact_possible=batch.hcc_impact_possible,
+        quality_measures_at_risk=batch.quality_measures_at_risk,
+        documentation_score=batch.documentation_score,
+        generation_time_ms=round(generation_time_ms, 2),
     )
 
 

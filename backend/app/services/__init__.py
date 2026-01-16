@@ -178,6 +178,18 @@ from app.services.enhanced_extraction import (
     reset_enhanced_extraction_service,
     with_retry,
 )
+from app.services.coding_query_generator import (
+    CERCitation as QueryCERCitation,
+    CodingImpact,
+    CodingQuery,
+    CodingQueryGeneratorService,
+    QueryBatch,
+    QueryPriority,
+    QueryStatus,
+    ResponseOption,
+    get_coding_query_generator_service,
+    reset_coding_query_generator_service,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -311,4 +323,14 @@ __all__ = [
     "get_enhanced_extraction_service",
     "reset_enhanced_extraction_service",
     "with_retry",
+    "QueryCERCitation",
+    "CodingImpact",
+    "CodingQuery",
+    "CodingQueryGeneratorService",
+    "QueryBatch",
+    "QueryPriority",
+    "QueryStatus",
+    "ResponseOption",
+    "get_coding_query_generator_service",
+    "reset_coding_query_generator_service",
 ]

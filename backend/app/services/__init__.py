@@ -39,6 +39,8 @@ from app.services.mapping import (
     MappingServiceInterface,
 )
 from app.services.mapping_db import DatabaseMappingService
+from app.services.mapping_sql import SQLMappingService
+from app.services.nlp_vocabulary import FilteredNLPVocabularyService
 from app.services.nlp import BaseNLPService, ExtractedMention, NLPServiceInterface
 from app.services.nlp_rule_based import RuleBasedNLPService
 from app.services.vocabulary import VocabularyService
@@ -58,6 +60,7 @@ __all__ = [
     "FactBuilderServiceInterface",
     "FactInput",
     "FactResult",
+    "FilteredNLPVocabularyService",
     "GraphBuilderServiceInterface",
     "GraphResult",
     "MappingMethod",
@@ -65,6 +68,7 @@ __all__ = [
     "NodeInput",
     "NLPServiceInterface",
     "RuleBasedNLPService",
+    "SQLMappingService",
     "VocabularyService",
     "BaseOMOPExporter",
     "DatabaseOMOPExporter",

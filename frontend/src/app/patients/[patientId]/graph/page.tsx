@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPatientGraph, buildPatientGraph, PatientGraph, GraphNode } from "@/lib/api";
 import { toast } from "sonner";
+
+// Dynamic import for D3 visualization (client-side only)
+const KnowledgeGraph = dynamic(() => import("@/components/KnowledgeGraph"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-[500px] bg-slate-950 rounded-xl">
+      <div className="text-slate-400">Loading visualization...</div>
+    </div>
+  ),
+});
 
 const NODE_TYPE_COLORS: Record<string, string> = {
   patient: "bg-purple-100 text-purple-800",
@@ -253,48 +264,20 @@ export default function PatientGraphPage() {
               </TabsContent>
 
               <TabsContent value="visual">
-                <Card>
+                <Card className="overflow-hidden">
                   <CardHeader>
-                    <CardTitle>Graph Visualization</CardTitle>
+                    <CardTitle>Interactive Knowledge Graph</CardTitle>
                     <CardDescription>
-                      Simple visual representation of the patient knowledge graph
+                      Force-directed visualization • Drag nodes to explore • Click to highlight connections
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col items-center space-y-8 py-8">
-                      {/* Patient node at center */}
-                      <div className="rounded-full bg-purple-200 px-6 py-3 text-purple-800 font-semibold">
-                        Patient {patientId}
-                      </div>
-
-                      {/* Connections */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-                        {Object.entries(nodesByType)
-                          .filter(([type]) => type !== "patient")
-                          .map(([type, nodes]) => (
-                            <div key={type} className="space-y-2">
-                              <h4 className="text-center font-semibold capitalize">{type}s</h4>
-                              <div className="space-y-1">
-                                {nodes.slice(0, 5).map((node) => (
-                                  <div
-                                    key={node.id}
-                                    className={`rounded px-3 py-1 text-sm ${NODE_TYPE_COLORS[type] || "bg-gray-100"}`}
-                                  >
-                                    {node.label}
-                                    {Boolean(node.properties?.is_negated) && (
-                                      <span className="ml-2 text-red-600">(negated)</span>
-                                    )}
-                                  </div>
-                                ))}
-                                {nodes.length > 5 && (
-                                  <div className="text-center text-xs text-zinc-500">
-                                    +{nodes.length - 5} more
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                      </div>
+                  <CardContent className="p-0">
+                    <div className="h-[600px]">
+                      <KnowledgeGraph
+                        nodes={graph.nodes}
+                        edges={graph.edges}
+                        patientId={patientId}
+                      />
                     </div>
                   </CardContent>
                 </Card>

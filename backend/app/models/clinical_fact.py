@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -81,6 +81,11 @@ class ClinicalFact(Base):
     )
     end_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
+        nullable=True,
+    )
+    # Vector embedding for semantic search (384 dimensions for MiniLM)
+    embedding: Mapped[list[float] | None] = mapped_column(
+        ARRAY(Float),
         nullable=True,
     )
 

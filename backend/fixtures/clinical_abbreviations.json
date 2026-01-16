@@ -1,0 +1,414 @@
+{
+  "description": "Common clinical abbreviations and short names for NLP extraction",
+  "version": "1.0",
+  "terms": [
+    {
+      "name": "BNP",
+      "synonyms": ["bnp", "b-type natriuretic peptide", "brain natriuretic peptide"],
+      "domain": "Measurement",
+      "omop_concept_id": 3022217
+    },
+    {
+      "name": "Troponin",
+      "synonyms": ["troponin", "troponin i", "troponin t", "trop", "tnI", "tnT"],
+      "domain": "Measurement",
+      "omop_concept_id": 3025232
+    },
+    {
+      "name": "Creatinine",
+      "synonyms": ["creatinine", "cr", "serum creatinine", "scr"],
+      "domain": "Measurement",
+      "omop_concept_id": 3016723
+    },
+    {
+      "name": "BUN",
+      "synonyms": ["bun", "blood urea nitrogen", "urea nitrogen"],
+      "domain": "Measurement",
+      "omop_concept_id": 3013682
+    },
+    {
+      "name": "Hemoglobin",
+      "synonyms": ["hemoglobin", "hgb", "hb", "haemoglobin"],
+      "domain": "Measurement",
+      "omop_concept_id": 3000963
+    },
+    {
+      "name": "WBC",
+      "synonyms": ["wbc", "white blood cell", "white blood cell count", "leukocytes", "white count"],
+      "domain": "Measurement",
+      "omop_concept_id": 3000905
+    },
+    {
+      "name": "Platelets",
+      "synonyms": ["platelets", "plt", "platelet count", "thrombocytes"],
+      "domain": "Measurement",
+      "omop_concept_id": 3024929
+    },
+    {
+      "name": "Sodium",
+      "synonyms": ["sodium", "na", "serum sodium", "na+"],
+      "domain": "Measurement",
+      "omop_concept_id": 3019550
+    },
+    {
+      "name": "Potassium",
+      "synonyms": ["potassium", "k", "serum potassium", "k+"],
+      "domain": "Measurement",
+      "omop_concept_id": 3023103
+    },
+    {
+      "name": "Chloride",
+      "synonyms": ["chloride", "cl", "serum chloride"],
+      "domain": "Measurement",
+      "omop_concept_id": 3014576
+    },
+    {
+      "name": "Bicarbonate",
+      "synonyms": ["bicarbonate", "co2", "hco3", "serum bicarbonate", "total co2"],
+      "domain": "Measurement",
+      "omop_concept_id": 3015632
+    },
+    {
+      "name": "Glucose",
+      "synonyms": ["glucose", "blood glucose", "blood sugar", "bs", "serum glucose"],
+      "domain": "Measurement",
+      "omop_concept_id": 3004501
+    },
+    {
+      "name": "INR",
+      "synonyms": ["inr", "international normalized ratio", "pt/inr"],
+      "domain": "Measurement",
+      "omop_concept_id": 3022217
+    },
+    {
+      "name": "PT",
+      "synonyms": ["pt", "prothrombin time"],
+      "domain": "Measurement",
+      "omop_concept_id": 3034426
+    },
+    {
+      "name": "Heart Rate",
+      "synonyms": ["heart rate", "hr", "pulse", "pulse rate"],
+      "domain": "Measurement",
+      "omop_concept_id": 3027018
+    },
+    {
+      "name": "Blood Pressure",
+      "synonyms": ["blood pressure", "bp", "systolic blood pressure", "diastolic blood pressure", "sbp", "dbp"],
+      "domain": "Measurement",
+      "omop_concept_id": 3012888
+    },
+    {
+      "name": "Respiratory Rate",
+      "synonyms": ["respiratory rate", "rr", "resp rate", "respirations"],
+      "domain": "Measurement",
+      "omop_concept_id": 3024171
+    },
+    {
+      "name": "Temperature",
+      "synonyms": ["temperature", "temp", "body temperature", "fever"],
+      "domain": "Measurement",
+      "omop_concept_id": 3020891
+    },
+    {
+      "name": "Oxygen Saturation",
+      "synonyms": ["oxygen saturation", "o2 sat", "spo2", "o2 saturation", "pulse ox", "pulse oximetry"],
+      "domain": "Measurement",
+      "omop_concept_id": 3016502
+    },
+    {
+      "name": "Weight",
+      "synonyms": ["weight", "body weight", "wt"],
+      "domain": "Measurement",
+      "omop_concept_id": 3025315
+    },
+    {
+      "name": "Height",
+      "synonyms": ["height", "body height", "ht", "stature"],
+      "domain": "Measurement",
+      "omop_concept_id": 3036277
+    },
+    {
+      "name": "BMI",
+      "synonyms": ["bmi", "body mass index"],
+      "domain": "Measurement",
+      "omop_concept_id": 3038553
+    },
+    {
+      "name": "EKG",
+      "synonyms": ["ekg", "ecg", "electrocardiogram", "electrocardiograph", "12-lead"],
+      "domain": "Procedure",
+      "omop_concept_id": 4152194
+    },
+    {
+      "name": "Chest X-Ray",
+      "synonyms": ["chest x-ray", "cxr", "chest radiograph", "chest xray"],
+      "domain": "Procedure",
+      "omop_concept_id": 4058286
+    },
+    {
+      "name": "CT Scan",
+      "synonyms": ["ct scan", "ct", "computed tomography", "cat scan"],
+      "domain": "Procedure",
+      "omop_concept_id": 4013636
+    },
+    {
+      "name": "MRI",
+      "synonyms": ["mri", "magnetic resonance imaging", "mr imaging"],
+      "domain": "Procedure",
+      "omop_concept_id": 4013637
+    },
+    {
+      "name": "Ultrasound",
+      "synonyms": ["ultrasound", "us", "sonogram", "ultrasonography", "echo"],
+      "domain": "Procedure",
+      "omop_concept_id": 4019824
+    },
+    {
+      "name": "PCI",
+      "synonyms": ["pci", "percutaneous coronary intervention", "angioplasty", "coronary stent", "stenting"],
+      "domain": "Procedure",
+      "omop_concept_id": 4336464
+    },
+    {
+      "name": "CABG",
+      "synonyms": ["cabg", "coronary artery bypass graft", "bypass surgery", "coronary bypass"],
+      "domain": "Procedure",
+      "omop_concept_id": 4027517
+    },
+    {
+      "name": "Dialysis",
+      "synonyms": ["dialysis", "hemodialysis", "hd", "peritoneal dialysis", "pd"],
+      "domain": "Procedure",
+      "omop_concept_id": 4032243
+    },
+    {
+      "name": "Intubation",
+      "synonyms": ["intubation", "endotracheal intubation", "ett", "intubated"],
+      "domain": "Procedure",
+      "omop_concept_id": 4097216
+    },
+    {
+      "name": "Ventilator",
+      "synonyms": ["ventilator", "mechanical ventilation", "vent", "ventilated"],
+      "domain": "Procedure",
+      "omop_concept_id": 4177224
+    },
+    {
+      "name": "IV",
+      "synonyms": ["iv", "intravenous", "iv access", "peripheral iv", "piv"],
+      "domain": "Procedure",
+      "omop_concept_id": 4170108
+    },
+    {
+      "name": "Cardiology Consult",
+      "synonyms": ["cardiology consult", "cards consult", "cardiology consultation"],
+      "domain": "Procedure",
+      "omop_concept_id": 4082853
+    },
+    {
+      "name": "Telemetry",
+      "synonyms": ["telemetry", "tele", "cardiac monitoring", "continuous monitoring"],
+      "domain": "Observation",
+      "omop_concept_id": 4141583
+    },
+    {
+      "name": "Pleural Effusion",
+      "synonyms": ["pleural effusion", "pleural effusions", "fluid around lung"],
+      "domain": "Condition",
+      "omop_concept_id": 254061
+    },
+    {
+      "name": "Pulmonary Edema",
+      "synonyms": ["pulmonary edema", "pulmonary oedema", "fluid in lungs", "pulmonary vascular congestion"],
+      "domain": "Condition",
+      "omop_concept_id": 261325
+    },
+    {
+      "name": "JVD",
+      "synonyms": ["jvd", "jugular venous distension", "jugular venous distention", "elevated jvp", "jvp elevated"],
+      "domain": "Observation",
+      "omop_concept_id": 4178263
+    },
+    {
+      "name": "Crackles",
+      "synonyms": ["crackles", "rales", "bibasilar crackles", "bilateral crackles", "lung crackles"],
+      "domain": "Observation",
+      "omop_concept_id": 4281389
+    },
+    {
+      "name": "AKI",
+      "synonyms": ["aki", "acute kidney injury", "acute renal failure", "arf", "acute renal injury"],
+      "domain": "Condition",
+      "omop_concept_id": 197320
+    },
+    {
+      "name": "GERD",
+      "synonyms": ["gerd", "gastroesophageal reflux disease", "acid reflux", "reflux"],
+      "domain": "Condition",
+      "omop_concept_id": 4185719
+    },
+    {
+      "name": "OSA",
+      "synonyms": ["osa", "obstructive sleep apnea", "sleep apnea", "obstructive sleep apnoea"],
+      "domain": "Condition",
+      "omop_concept_id": 313459
+    },
+    {
+      "name": "DVT",
+      "synonyms": ["dvt", "deep vein thrombosis", "deep venous thrombosis", "leg clot"],
+      "domain": "Condition",
+      "omop_concept_id": 4133004
+    },
+    {
+      "name": "PE",
+      "synonyms": ["pe", "pulmonary embolism", "pulmonary embolus", "lung clot"],
+      "domain": "Condition",
+      "omop_concept_id": 440417
+    },
+    {
+      "name": "MI",
+      "synonyms": ["mi", "myocardial infarction", "heart attack", "stemi", "nstemi"],
+      "domain": "Condition",
+      "omop_concept_id": 4329847
+    },
+    {
+      "name": "CHF",
+      "synonyms": ["chf", "congestive heart failure", "heart failure", "hf"],
+      "domain": "Condition",
+      "omop_concept_id": 316139
+    },
+    {
+      "name": "AFib",
+      "synonyms": ["afib", "a-fib", "atrial fibrillation", "af", "a fib"],
+      "domain": "Condition",
+      "omop_concept_id": 313217
+    },
+    {
+      "name": "COPD",
+      "synonyms": ["copd", "chronic obstructive pulmonary disease", "emphysema"],
+      "domain": "Condition",
+      "omop_concept_id": 255573
+    },
+    {
+      "name": "UTI",
+      "synonyms": ["uti", "urinary tract infection", "bladder infection", "cystitis"],
+      "domain": "Condition",
+      "omop_concept_id": 81902
+    },
+    {
+      "name": "Pneumonia",
+      "synonyms": ["pneumonia", "pna", "lung infection", "cap", "community acquired pneumonia"],
+      "domain": "Condition",
+      "omop_concept_id": 255848
+    },
+    {
+      "name": "Sepsis",
+      "synonyms": ["sepsis", "septic", "septicemia", "severe sepsis", "septic shock"],
+      "domain": "Condition",
+      "omop_concept_id": 132797
+    },
+    {
+      "name": "CVA",
+      "synonyms": ["cva", "cerebrovascular accident", "stroke", "ischemic stroke", "hemorrhagic stroke"],
+      "domain": "Condition",
+      "omop_concept_id": 381591
+    },
+    {
+      "name": "TIA",
+      "synonyms": ["tia", "transient ischemic attack", "mini stroke"],
+      "domain": "Condition",
+      "omop_concept_id": 373503
+    },
+    {
+      "name": "DKA",
+      "synonyms": ["dka", "diabetic ketoacidosis"],
+      "domain": "Condition",
+      "omop_concept_id": 443727
+    },
+    {
+      "name": "HHS",
+      "synonyms": ["hhs", "hyperosmolar hyperglycemic state", "hyperosmolar syndrome"],
+      "domain": "Condition",
+      "omop_concept_id": 4173906
+    },
+    {
+      "name": "GI Bleed",
+      "synonyms": ["gi bleed", "gastrointestinal bleed", "gi bleeding", "ugib", "lgib", "upper gi bleed", "lower gi bleed"],
+      "domain": "Condition",
+      "omop_concept_id": 192671
+    },
+    {
+      "name": "Insulin",
+      "synonyms": ["insulin", "sliding scale insulin", "ssi", "insulin drip", "regular insulin"],
+      "domain": "Drug",
+      "omop_concept_id": 1567198
+    },
+    {
+      "name": "Heparin",
+      "synonyms": ["heparin", "heparin drip", "heparin infusion", "ufh", "unfractionated heparin"],
+      "domain": "Drug",
+      "omop_concept_id": 1367571
+    },
+    {
+      "name": "Warfarin",
+      "synonyms": ["warfarin", "coumadin"],
+      "domain": "Drug",
+      "omop_concept_id": 1310149
+    },
+    {
+      "name": "Aspirin",
+      "synonyms": ["aspirin", "asa", "acetylsalicylic acid"],
+      "domain": "Drug",
+      "omop_concept_id": 1112807
+    },
+    {
+      "name": "Plavix",
+      "synonyms": ["plavix", "clopidogrel"],
+      "domain": "Drug",
+      "omop_concept_id": 1322184
+    },
+    {
+      "name": "Morphine",
+      "synonyms": ["morphine", "ms contin", "morphine sulfate"],
+      "domain": "Drug",
+      "omop_concept_id": 1110410
+    },
+    {
+      "name": "Fentanyl",
+      "synonyms": ["fentanyl", "duragesic"],
+      "domain": "Drug",
+      "omop_concept_id": 1154029
+    },
+    {
+      "name": "Lasix",
+      "synonyms": ["lasix"],
+      "domain": "Drug",
+      "omop_concept_id": 956874
+    },
+    {
+      "name": "CPAP",
+      "synonyms": ["cpap", "continuous positive airway pressure", "bipap", "bilevel"],
+      "domain": "Device",
+      "omop_concept_id": 4044650
+    },
+    {
+      "name": "Pacemaker",
+      "synonyms": ["pacemaker", "pacer", "ppm", "permanent pacemaker"],
+      "domain": "Device",
+      "omop_concept_id": 4141137
+    },
+    {
+      "name": "ICD",
+      "synonyms": ["icd", "implantable cardioverter defibrillator", "aicd", "defibrillator"],
+      "domain": "Device",
+      "omop_concept_id": 4144098
+    },
+    {
+      "name": "Foley",
+      "synonyms": ["foley", "foley catheter", "urinary catheter", "indwelling catheter"],
+      "domain": "Device",
+      "omop_concept_id": 4013410
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 """SQLAlchemy models for KGNode and KGEdge."""
 
-from sqlalchemy import JSON, Enum, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import JSON, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -46,6 +46,11 @@ class KGNode(Base):
         JSON,
         nullable=False,
         default=dict,
+    )
+    # Vector embedding for semantic search (384 dimensions for MiniLM)
+    embedding: Mapped[list[float] | None] = mapped_column(
+        ARRAY(Float),
+        nullable=True,
     )
 
     # Relationships for edges

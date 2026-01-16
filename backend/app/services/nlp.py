@@ -27,6 +27,10 @@ class ExtractedMention:
     temporality: Temporality = field(default=Temporality.CURRENT)
     experiencer: Experiencer = field(default=Experiencer.PATIENT)
     confidence: float = 1.0
+    # Domain hint from vocabulary (helps mapping service prioritize correct concept)
+    domain_hint: str | None = None
+    # Direct concept_id if known from curated vocabulary (bypasses mapping)
+    omop_concept_id: int | None = None
 
     @property
     def is_negated(self) -> bool:

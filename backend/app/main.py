@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import documents_router, export_router, jobs_router, patients_router
+from app.api import documents_router, export_router, fhir_router, jobs_router, patients_router, search_router
 from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.core.queue import clear_queues
@@ -52,8 +52,10 @@ app.add_middleware(
 # Include routers
 app.include_router(documents_router)
 app.include_router(export_router)
+app.include_router(fhir_router)
 app.include_router(jobs_router)
 app.include_router(patients_router)
+app.include_router(search_router)
 
 
 @app.get("/health", tags=["Health"])

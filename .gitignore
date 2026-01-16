@@ -57,3 +57,8 @@ htmlcov/
 
 # Local claude files
 .claude/*.local.md
+
+# Local MCP config
+.mcp.json
+.playwright-mcp/
+fhir-mcp/

@@ -12,14 +12,13 @@ from app.models import Document
 from app.models.mention import Mention, MentionConceptCandidate
 from app.schemas.base import Assertion, Domain, Experiencer, JobStatus, Temporality
 from app.services.fact_builder_db import DatabaseFactBuilderService
-from app.services.mapping_db import DatabaseMappingService
+from app.services.mapping_sql import SQLMappingService
 from app.services.nlp_rule_based import RuleBasedNLPService
 
 logger = logging.getLogger(__name__)
 
-# Singleton services for reuse across job calls
+# Singleton NLP service for reuse across job calls
 _nlp_service: RuleBasedNLPService | None = None
-_mapping_service: DatabaseMappingService | None = None
 
 
 def get_nlp_service() -> RuleBasedNLPService:
@@ -30,18 +29,13 @@ def get_nlp_service() -> RuleBasedNLPService:
     return _nlp_service
 
 
-def get_mapping_service(session: Session) -> DatabaseMappingService:
-    """Get or create the mapping service singleton.
+def get_mapping_service(session: Session) -> SQLMappingService:
+    """Create a SQL-based mapping service for concept lookups.
 
-    The mapping service needs to be loaded from the database
-    using a session, so we pass the session here.
+    Uses SQL queries instead of loading all concepts into memory,
+    enabling full 5.36M vocabulary support without OOM issues.
     """
-    global _mapping_service
-    if _mapping_service is None:
-        _mapping_service = DatabaseMappingService()
-    if not _mapping_service.is_loaded():
-        _mapping_service.load_from_db(session)
-    return _mapping_service
+    return SQLMappingService(session)
 
 
 # Domain ID mapping from OMOP vocabulary to our Domain enum
@@ -148,7 +142,10 @@ def process_document(document_id: str) -> dict:
             logger.info(f"Extracted {len(extracted_mentions)} mentions from document")
 
             # Create Mention records in database
+            # Also track direct concept_ids from vocabulary for use in fact building
             mention_records: list[Mention] = []
+            direct_concept_map: dict[str, tuple[int, str]] = {}  # mention_id -> (concept_id, domain)
+
             for extracted in extracted_mentions:
                 mention = Mention(
                     document_id=document_id,
@@ -165,33 +162,67 @@ def process_document(document_id: str) -> dict:
                 mention_records.append(mention)
                 session.add(mention)
 
+                # Store direct concept_id if available from vocabulary
+                if extracted.omop_concept_id and extracted.omop_concept_id > 0:
+                    # We'll map by index since mention.id isn't assigned yet
+                    direct_concept_map[len(mention_records) - 1] = (
+                        extracted.omop_concept_id,
+                        extracted.domain_hint or "Observation"
+                    )
+
             session.flush()  # Assign IDs to mentions
+
+            # Update direct_concept_map with actual mention IDs
+            mention_direct_concepts: dict[str, tuple[int, str]] = {}
+            for idx, (concept_id, domain) in direct_concept_map.items():
+                mention_id = mention_records[idx].id
+                mention_direct_concepts[mention_id] = (concept_id, domain)
 
             # Phase 5: Map mentions to OMOP concepts
             mapping_service = get_mapping_service(session)
             candidate_count = 0
 
             for mention in mention_records:
-                candidates = mapping_service.map_mention(
-                    text=mention.text,
-                    domain=None,  # Allow any domain
-                    limit=5,  # Top 5 candidates per mention
-                )
-
-                for candidate in candidates:
+                # Check if we have a direct concept_id from vocabulary
+                if mention.id in mention_direct_concepts:
+                    concept_id, domain = mention_direct_concepts[mention.id]
+                    # Create a high-priority candidate with the direct concept
+                    # Convert domain to lowercase to match database enum
                     concept_candidate = MentionConceptCandidate(
                         mention_id=mention.id,
-                        omop_concept_id=candidate.omop_concept_id,
-                        concept_name=candidate.concept_name,
-                        concept_code=candidate.concept_code,
-                        vocabulary_id=candidate.vocabulary_id,
-                        domain_id=candidate.domain_id,
-                        score=candidate.score,
-                        method=candidate.method.value,
-                        rank=candidate.rank,
+                        omop_concept_id=concept_id,
+                        concept_name=mention.text,  # Use original text
+                        concept_code=str(concept_id),
+                        vocabulary_id="Direct",
+                        domain_id=domain.lower() if domain else "observation",
+                        score=1.0,  # Perfect score for direct match
+                        method="direct",
+                        rank=1,
                     )
                     session.add(concept_candidate)
                     candidate_count += 1
+                else:
+                    # Fall back to mapping service
+                    candidates = mapping_service.map_mention(
+                        text=mention.text,
+                        domain=None,  # Allow any domain
+                        limit=5,  # Top 5 candidates per mention
+                    )
+
+                    for candidate in candidates:
+                        concept_candidate = MentionConceptCandidate(
+                            mention_id=mention.id,
+                            omop_concept_id=candidate.omop_concept_id,
+                            concept_name=candidate.concept_name,
+                            concept_code=candidate.concept_code,
+                            vocabulary_id=candidate.vocabulary_id,
+                            domain_id=candidate.domain_id,
+                            score=candidate.score,
+                            method=candidate.method.value,
+                            rank=candidate.rank,
+                        )
+                        session.add(concept_candidate)
+                        candidate_count += 1
 
             logger.info(
                 f"Created {candidate_count} concept candidates for {len(mention_records)} mentions"

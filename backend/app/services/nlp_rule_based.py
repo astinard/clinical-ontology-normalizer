@@ -46,6 +46,36 @@ class RuleBasedNLPService(BaseNLPService):
         nlp = RuleBasedNLPService(vocab)
     """
 
+    # Stopwords - common English words that should NOT be extracted as clinical terms
+    # These may exist as concepts in OMOP but create noise when extracted from text
+    STOPWORDS = {
+        # Common English words
+        "a", "an", "the", "is", "are", "was", "were", "be", "been",
+        "or", "and", "but", "if", "then", "so", "as", "at", "by", "for",
+        "from", "in", "into", "of", "on", "to", "with", "without",
+        "yes", "no", "not", "can", "will", "may", "has", "had", "have",
+        "all", "any", "some", "one", "two", "per", "mg", "ml",
+        # Common medical/clinical words that are too generic
+        "air",      # RxNorm Ingredient - creates false positives from "room air"
+        "water",    # Too common
+        "normal",   # Too generic - "within normal limits"
+        "stable",   # Too generic - "vitals stable"
+        "pain",     # Too generic without context
+        "use",      # From "use of"
+        "day",      # Too common
+        "time",     # Too common
+        "room",     # Too common
+        "well",     # Too common - "patient doing well"
+        "new",      # Too common
+        "old",      # Too common
+        "left",     # Too ambiguous without body site context
+        "right",    # Too ambiguous without body site context
+        "patient",  # Too common
+    }
+
+    # Minimum term length to extract (helps reduce noise)
+    MIN_TERM_LENGTH = 2
+
     # Common patterns for clinical terms not in vocabulary
     CLINICAL_PATTERNS = [
         # Vital signs with values
@@ -124,23 +154,25 @@ class RuleBasedNLPService(BaseNLPService):
 
         Args:
             vocabulary_service: Optional vocabulary service for term lookup.
-                               If not provided, uses database vocabulary if
-                               USE_DB_VOCABULARY=true, else file-based fixture.
+                               If not provided, uses filtered database vocabulary
+                               if USE_DB_VOCABULARY=true, else file-based fixture.
         """
         super().__init__()
 
         if vocabulary_service is not None:
             self._vocabulary_service = vocabulary_service
         elif os.environ.get("USE_DB_VOCABULARY", "").lower() == "true":
-            # Use database-backed vocabulary for full OMOP coverage
-            from app.services.vocabulary_db import DatabaseVocabularyService
-            logger.info("Using database-backed vocabulary service")
-            self._vocabulary_service = DatabaseVocabularyService()
+            # Use FILTERED database vocabulary for memory-efficient NLP extraction
+            # This loads only high-value clinical terms (~100K) instead of all 5.36M
+            from app.services.nlp_vocabulary import FilteredNLPVocabularyService
+            logger.info("Using filtered database vocabulary service for NLP extraction")
+            self._vocabulary_service = FilteredNLPVocabularyService()
         else:
             # Fall back to file-based fixture
             self._vocabulary_service = VocabularyService()
 
-        self._term_patterns: list[tuple[re.Pattern[str], str]] = []
+        # Pattern info: (pattern, synonym, domain_id, concept_id)
+        self._term_patterns: list[tuple[re.Pattern[str], str, str, int]] = []
         self._initialized = False
 
     def _initialize_patterns(self) -> None:
@@ -151,7 +183,7 @@ class RuleBasedNLPService(BaseNLPService):
         self._vocabulary_service.load()
         self._term_patterns = []
 
-        # Build patterns from vocabulary synonyms
+        # Build patterns from vocabulary synonyms with domain/concept hints
         for concept in self._vocabulary_service.concepts:
             for synonym in concept.synonyms:
                 # Create word-boundary pattern for each synonym
@@ -160,7 +192,13 @@ class RuleBasedNLPService(BaseNLPService):
                     r"\b" + re.escape(synonym) + r"\b",
                     re.IGNORECASE,
                 )
-                self._term_patterns.append((pattern, synonym))
+                # Store pattern with domain and concept_id for direct mapping
+                self._term_patterns.append((
+                    pattern,
+                    synonym,
+                    concept.domain_id,
+                    concept.concept_id
+                ))
 
         self._initialized = True
 
@@ -190,13 +228,23 @@ class RuleBasedNLPService(BaseNLPService):
         seen_spans: set[tuple[int, int]] = set()
 
         # Extract vocabulary-based mentions
-        for pattern, lexical_variant in self._term_patterns:
+        for pattern, lexical_variant, domain_id, concept_id in self._term_patterns:
             for match in pattern.finditer(text):
                 start, end = match.start(), match.end()
+                matched_text = match.group()
 
                 # Skip if we've already found a mention at this span
                 if (start, end) in seen_spans:
                     continue
+
+                # Skip stopwords (common English words that create noise)
+                if matched_text.lower() in self.STOPWORDS:
+                    continue
+
+                # Skip terms below minimum length
+                if len(matched_text) < self.MIN_TERM_LENGTH:
+                    continue
+
                 seen_spans.add((start, end))
 
                 # Get context for attribute detection
@@ -223,6 +271,8 @@ class RuleBasedNLPService(BaseNLPService):
                     temporality=temporality,
                     experiencer=experiencer,
                     confidence=0.8,  # Rule-based confidence
+                    domain_hint=domain_id,  # Pass domain from vocabulary
+                    omop_concept_id=concept_id,  # Direct concept_id if available
                 )
                 mentions.append(mention)
 

@@ -1,0 +1,93 @@
+# FHIR MCP Server with HAPI FHIR backend
+# Run with: docker-compose -f docker-compose.fhir.yml up -d
+#
+# Ports:
+#   - HAPI FHIR Server: http://localhost:8090
+#   - FHIR MCP Server: http://localhost:8001
+#
+# Usage with Claude Code MCP:
+#   Add to Claude settings mcpServers config:
+#   "fhir": {
+#     "command": "npx",
+#     "args": ["-y", "mcp-remote", "http://localhost:8001/mcp"]
+#   }
+
+services:
+  # PostgreSQL for HAPI FHIR
+  fhir-postgres:
+    image: docker.io/postgres:17
+    container_name: fhir-postgres
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=fhir
+    volumes:
+      - fhir-postgres-data:/var/lib/postgresql/data
+    networks:
+      - fhir-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # HAPI FHIR R4 Server
+  hapi-fhir:
+    image: docker.io/hapiproject/hapi:v8.4.0-2
+    container_name: hapi-fhir
+    depends_on:
+      fhir-postgres:
+        condition: service_healthy
+    environment:
+      - spring.main.allow-bean-definition-overriding=true
+      - hapi.fhir.cdshooks.enabled=true
+      - hapi.fhir.cr.enabled=true
+      - spring.datasource.url=jdbc:postgresql://fhir-postgres:5432/fhir
+      - spring.datasource.password=password
+      - spring.datasource.username=postgres
+      - spring.datasource.driverClassName=org.postgresql.Driver
+      - spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgres94Dialect
+      - hapi.fhir.fhir_version=R4
+      - hapi.fhir.allow_cascading_deletes=true
+      - hapi.fhir.allow_multiple_delete=true
+      - hapi.fhir.bulk_export_enabled=true
+      - hapi.fhir.bulk_import_enabled=true
+      - hapi.fhir.expunge_enabled=true
+      - hapi.fhir.allow_external_references=true
+    ports:
+      - "8090:8080"
+    networks:
+      - fhir-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/fhir/metadata || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # FHIR MCP Server
+  fhir-mcp:
+    build:
+      context: ./fhir-mcp
+      dockerfile: Dockerfile
+    image: fhir-mcp-server:latest
+    container_name: fhir-mcp
+    depends_on:
+      hapi-fhir:
+        condition: service_healthy
+    environment:
+      FHIR_SERVER_BASE_URL: http://hapi-fhir:8080/fhir
+      FHIR_MCP_HOST: 0.0.0.0
+      FHIR_MCP_PORT: "8000"
+      FHIR_MCP_REQUEST_TIMEOUT: "30"
+      FHIR_SERVER_DISABLE_AUTHORIZATION: "True"
+    ports:
+      - "8001:8000"
+    networks:
+      - fhir-network
+
+networks:
+  fhir-network:
+    name: fhir-network
+
+volumes:
+  fhir-postgres-data:

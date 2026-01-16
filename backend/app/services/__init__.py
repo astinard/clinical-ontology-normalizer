@@ -116,6 +116,16 @@ from app.services.differential_diagnosis import (
     get_differential_diagnosis_service,
     reset_differential_diagnosis_service,
 )
+from app.services.drug_safety import (
+    DrugSafetyProfile,
+    DrugSafetyService,
+    LactationSafety,
+    PregnancyCategory,
+    SafetyCheckResult,
+    SafetyLevel,
+    get_drug_safety_service,
+    reset_drug_safety_service,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -199,4 +209,12 @@ __all__ = [
     "DifferentialResult",
     "get_differential_diagnosis_service",
     "reset_differential_diagnosis_service",
+    "DrugSafetyProfile",
+    "DrugSafetyService",
+    "LactationSafety",
+    "PregnancyCategory",
+    "SafetyCheckResult",
+    "SafetyLevel",
+    "get_drug_safety_service",
+    "reset_drug_safety_service",
 ]

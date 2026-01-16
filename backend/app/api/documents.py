@@ -1552,3 +1552,148 @@ async def generate_differential_diagnosis(
         generation_time_ms=round(generation_time_ms, 2),
         database_stats=service.get_stats(),
     )
+
+
+# ============================================================================
+# Drug Safety Check Endpoint
+# ============================================================================
+
+
+class DrugSafetyCheckRequest(BaseModel):
+    """Request body for drug safety check."""
+
+    drug: str = Field(..., description="Drug name (generic or brand)")
+    patient_conditions: list[str] | None = Field(None, description="Patient conditions/diagnoses")
+    age: int | None = Field(None, ge=0, le=120, description="Patient age in years")
+    pregnant: bool = Field(False, description="Whether patient is pregnant")
+    lactating: bool = Field(False, description="Whether patient is lactating")
+    egfr: float | None = Field(None, ge=0, description="eGFR for renal dosing (mL/min/1.73m2)")
+
+
+class DrugContraindicationResponse(BaseModel):
+    """A contraindication for a drug."""
+
+    condition: str = Field(..., description="Contraindicated condition")
+    rationale: str = Field(..., description="Reason for contraindication")
+
+
+class DrugSafetyProfileResponse(BaseModel):
+    """Drug safety profile summary."""
+
+    drug_name: str = Field(..., description="Drug name")
+    generic_name: str = Field(..., description="Generic name")
+    drug_class: str = Field(..., description="Drug class")
+    pregnancy_category: str = Field(..., description="Pregnancy category (A, B, C, D, X)")
+    lactation_safety: str = Field(..., description="Lactation safety")
+    black_box_warnings: list[str] = Field(..., description="Black box warnings")
+    common_adverse_effects: list[str] = Field(..., description="Common side effects")
+    serious_adverse_effects: list[str] = Field(..., description="Serious adverse effects")
+    monitoring_parameters: list[str] = Field(..., description="Recommended monitoring")
+
+
+class DrugSafetyCheckResponse(BaseModel):
+    """Response from drug safety check."""
+
+    drug_name: str = Field(..., description="Drug name checked")
+    overall_safety: str = Field(..., description="Overall safety level (safe, caution, warning, contraindicated)")
+    contraindicated_conditions: list[DrugContraindicationResponse] = Field(..., description="Contraindicated conditions")
+    warnings: list[str] = Field(..., description="Warnings and black box alerts")
+    cautions: list[str] = Field(..., description="Cautions")
+    dosing_considerations: list[str] = Field(..., description="Dosing adjustments needed")
+    monitoring_needed: list[str] = Field(..., description="Required monitoring")
+    pregnancy_warning: str | None = Field(None, description="Pregnancy-specific warning")
+    lactation_warning: str | None = Field(None, description="Lactation-specific warning")
+    profile: DrugSafetyProfileResponse | None = Field(None, description="Full drug profile")
+    check_time_ms: float = Field(..., description="Time taken in ms")
+    database_stats: dict = Field(..., description="Safety database statistics")
+
+
+@router.post(
+    "/clinical/drug-safety",
+    response_model=DrugSafetyCheckResponse,
+    summary="Check drug safety for a patient",
+    description="Check drug safety including contraindications, warnings, and dosing considerations.",
+)
+async def check_drug_safety(
+    request: DrugSafetyCheckRequest,
+) -> DrugSafetyCheckResponse:
+    """Check drug safety for a specific patient context.
+
+    This endpoint provides comprehensive drug safety checking including:
+
+    - **Contraindications**: Conditions where the drug should not be used
+    - **Black box warnings**: FDA-mandated serious warnings
+    - **Pregnancy safety**: Category and specific risks
+    - **Lactation safety**: Breastfeeding compatibility
+    - **Dosing adjustments**: Renal, hepatic, age-based modifications
+    - **Monitoring requirements**: Parameters to track during therapy
+    - **Adverse effects**: Common and serious side effects
+
+    The check considers:
+    - Patient conditions/diagnoses
+    - Age (pediatric/geriatric considerations)
+    - Pregnancy and lactation status
+    - Renal function (eGFR) for dosing
+
+    **Important**: This is a clinical decision support tool. Always consult
+    current prescribing information and exercise clinical judgment.
+
+    Args:
+        request: Drug and patient-specific parameters.
+
+    Returns:
+        DrugSafetyCheckResponse with safety assessment.
+    """
+    import time
+    from app.services.drug_safety import get_drug_safety_service
+
+    start_time = time.perf_counter()
+
+    service = get_drug_safety_service()
+
+    result = service.check_safety(
+        drug=request.drug,
+        patient_conditions=request.patient_conditions,
+        age=request.age,
+        pregnant=request.pregnant,
+        lactating=request.lactating,
+        egfr=request.egfr,
+    )
+
+    check_time_ms = (time.perf_counter() - start_time) * 1000
+
+    # Build profile response if available
+    profile_response = None
+    if result.profile:
+        profile_response = DrugSafetyProfileResponse(
+            drug_name=result.profile.drug_name,
+            generic_name=result.profile.generic_name,
+            drug_class=result.profile.drug_class,
+            pregnancy_category=result.profile.pregnancy_category.value,
+            lactation_safety=result.profile.lactation_safety.value,
+            black_box_warnings=result.profile.black_box_warnings,
+            common_adverse_effects=result.profile.common_adverse_effects,
+            serious_adverse_effects=result.profile.serious_adverse_effects,
+            monitoring_parameters=result.profile.monitoring_parameters,
+        )
+
+    # Convert contraindications
+    contraindications = [
+        DrugContraindicationResponse(condition=c[0], rationale=c[1])
+        for c in result.contraindicated_conditions
+    ]
+
+    return DrugSafetyCheckResponse(
+        drug_name=result.drug_name,
+        overall_safety=result.overall_safety.value,
+        contraindicated_conditions=contraindications,
+        warnings=result.warnings,
+        cautions=result.cautions,
+        dosing_considerations=result.dosing_considerations,
+        monitoring_needed=result.monitoring_needed,
+        pregnancy_warning=result.pregnancy_warning,
+        lactation_warning=result.lactation_warning,
+        profile=profile_response,
+        check_time_ms=round(check_time_ms, 2),
+        database_stats=service.get_stats(),
+    )

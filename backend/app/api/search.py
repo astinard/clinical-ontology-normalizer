@@ -3,15 +3,17 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from app.core.database import get_sync_engine
+from app.core.database import get_db, get_sync_engine
 from app.models.clinical_fact import ClinicalFact as ClinicalFactModel
 from app.models.knowledge_graph import KGNode
 from app.services.embedding_service import get_embedding_service
+from app.services.hybrid_search import get_hybrid_search_service, SearchResult as HybridSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -392,3 +394,189 @@ def find_similar_concepts(
             results=results,
             total=len(results),
         )
+
+
+class HybridSearchRequest(BaseModel):
+    """Request body for hybrid concept search."""
+
+    query: str = Field(..., min_length=1, description="Search term (clinical concept name)")
+    domain_id: str | None = Field(None, description="Optional domain filter (Condition, Drug, etc.)")
+    top_k: int = Field(10, ge=1, le=50, description="Maximum number of results")
+    semantic_threshold: float = Field(0.6, ge=0.0, le=1.0, description="Minimum semantic similarity")
+    include_semantic: bool = Field(True, description="Include semantic results if no exact match found")
+
+
+class ConceptSearchResult(BaseModel):
+    """Single concept search result."""
+
+    concept_id: int
+    concept_name: str
+    domain_id: str
+    vocabulary_id: str
+    score: float
+    match_type: str  # "exact", "synonym", "semantic"
+    matched_term: str | None = None
+
+
+class HybridSearchResponse(BaseModel):
+    """Response from hybrid concept search."""
+
+    query: str
+    results: list[ConceptSearchResult]
+    total: int
+    has_exact_match: bool
+
+
+# Type alias for database session dependency
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+@router.post(
+    "/concepts/hybrid",
+    response_model=HybridSearchResponse,
+    summary="Hybrid concept search",
+    description="Search OMOP concepts using exact matching with semantic fallback.",
+)
+async def hybrid_concept_search(
+    request: HybridSearchRequest,
+    db: DbSession,
+) -> HybridSearchResponse:
+    """Hybrid search for OMOP concepts.
+
+    First tries exact/synonym matching (fast, high confidence).
+    If no exact match found, falls back to semantic search
+    (slower but handles typos and variations).
+
+    Examples:
+        - "heart failure" → exact match to Heart failure concept
+        - "hart failure" → semantic match (typo handling)
+        - "CHF" → synonym match
+        - "cardiac insufficiency" → semantic match (synonym not in vocab)
+
+    Args:
+        request: Search parameters.
+        db: Database session.
+
+    Returns:
+        HybridSearchResponse with matching concepts.
+    """
+    logger.info(f"Hybrid concept search: query='{request.query}', domain={request.domain_id}")
+
+    try:
+        # Get or initialize hybrid search service
+        search_service = await get_hybrid_search_service(
+            db,
+            domains=["Condition", "Drug", "Measurement", "Procedure"] if not request.domain_id else [request.domain_id],
+        )
+
+        # Perform hybrid search
+        results = await search_service.search(
+            term=request.query,
+            domain_id=request.domain_id,
+            top_k=request.top_k,
+            semantic_threshold=request.semantic_threshold,
+            include_semantic=request.include_semantic,
+        )
+
+        # Convert to response format
+        concept_results = [
+            ConceptSearchResult(
+                concept_id=r.concept_id,
+                concept_name=r.concept_name,
+                domain_id=r.domain_id,
+                vocabulary_id=r.vocabulary_id,
+                score=round(r.score, 4),
+                match_type=r.match_type,
+                matched_term=r.matched_term,
+            )
+            for r in results
+        ]
+
+        has_exact = any(r.match_type in ("exact", "synonym") for r in results)
+
+        return HybridSearchResponse(
+            query=request.query,
+            results=concept_results,
+            total=len(concept_results),
+            has_exact_match=has_exact,
+        )
+
+    except Exception as e:
+        logger.error(f"Hybrid search failed: {e}")
+        # Return empty results on error (graceful degradation)
+        return HybridSearchResponse(
+            query=request.query,
+            results=[],
+            total=0,
+            has_exact_match=False,
+        )
+
+
+class BatchSearchRequest(BaseModel):
+    """Request body for batch concept search."""
+
+    terms: list[str] = Field(..., min_length=1, max_length=100, description="List of search terms")
+    domain_id: str | None = Field(None, description="Optional domain filter")
+
+
+@router.post(
+    "/concepts/batch",
+    response_model=dict[str, HybridSearchResponse],
+    summary="Batch concept search",
+    description="Search multiple terms at once using hybrid matching.",
+)
+async def batch_concept_search(
+    request: BatchSearchRequest,
+    db: DbSession,
+) -> dict[str, HybridSearchResponse]:
+    """Batch search for multiple clinical terms.
+
+    Efficiently searches multiple terms and returns results for each.
+
+    Args:
+        request: Batch search request with terms and optional domain filter.
+        db: Database session.
+
+    Returns:
+        Dictionary mapping each term to its search results.
+    """
+    logger.info(f"Batch concept search: {len(request.terms)} terms, domain={request.domain_id}")
+
+    try:
+        search_service = await get_hybrid_search_service(db)
+        batch_results = await search_service.batch_search(
+            terms=request.terms,
+            domain_id=request.domain_id,
+            top_k_per_term=3,
+        )
+
+        # Convert to response format
+        response = {}
+        for term, results in batch_results.items():
+            concept_results = [
+                ConceptSearchResult(
+                    concept_id=r.concept_id,
+                    concept_name=r.concept_name,
+                    domain_id=r.domain_id,
+                    vocabulary_id=r.vocabulary_id,
+                    score=round(r.score, 4),
+                    match_type=r.match_type,
+                    matched_term=r.matched_term,
+                )
+                for r in results
+            ]
+
+            has_exact = any(r.match_type in ("exact", "synonym") for r in results)
+
+            response[term] = HybridSearchResponse(
+                query=term,
+                results=concept_results,
+                total=len(concept_results),
+                has_exact_match=has_exact,
+            )
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Batch search failed: {e}")
+        return {term: HybridSearchResponse(query=term, results=[], total=0, has_exact_match=False) for term in request.terms}

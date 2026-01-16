@@ -1,7 +1,9 @@
 """SQLAlchemy models for OMOP vocabulary concepts."""
 
 from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import Float
 
 from app.core.database import Base
 
@@ -45,6 +47,12 @@ class Concept(Base):
     )
     standard_concept: Mapped[str | None] = mapped_column(
         String(1),
+        nullable=True,
+    )
+
+    # Embedding vector for semantic search (384 dimensions for MiniLM)
+    embedding: Mapped[list[float] | None] = mapped_column(
+        ARRAY(Float),
         nullable=True,
     )
 

@@ -1,15 +1,19 @@
 """SQLAlchemy models for Document and StructuredResource."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import DateTime, Enum, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.schemas.base import JobStatus, ResourceType
+
+if TYPE_CHECKING:
+    from app.models.clinical_value import ClinicalValue
 
 
 class Document(Base):
@@ -54,6 +58,12 @@ class Document(Base):
     processed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
+    )
+
+    # Relationships
+    clinical_values: Mapped[list["ClinicalValue"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

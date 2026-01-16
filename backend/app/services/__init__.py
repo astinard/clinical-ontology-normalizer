@@ -43,11 +43,37 @@ from app.services.mapping_sql import SQLMappingService
 from app.services.nlp_vocabulary import FilteredNLPVocabularyService
 from app.services.nlp import BaseNLPService, ExtractedMention, NLPServiceInterface
 from app.services.nlp_rule_based import RuleBasedNLPService
+from app.services.value_extraction import (
+    ExtractedValue,
+    ValueExtractionService,
+    get_value_extraction_service,
+)
 from app.services.vocabulary import (
     VocabularyService,
     get_vocabulary_service,
     preload_vocabulary,
     reset_vocabulary_singleton,
+)
+from app.services.nlp_clinical_ner import (
+    ClinicalNERService,
+    TransformerNERConfig,
+    get_clinical_ner_service,
+    reset_clinical_ner_service,
+)
+from app.services.relation_extraction import (
+    ExtractedRelation,
+    RelationExtractionConfig,
+    RelationExtractionService,
+    RelationType,
+    get_relation_extraction_service,
+    reset_relation_extraction_service,
+)
+from app.services.nlp_ensemble import (
+    EnsembleConfig,
+    EnsembleNLPService,
+    EnsembleResult,
+    get_ensemble_nlp_service,
+    reset_ensemble_nlp_service,
 )
 
 __all__ = [
@@ -83,4 +109,22 @@ __all__ = [
     "NoteExport",
     "NoteNLPExport",
     "OMOPExportResult",
+    "ExtractedValue",
+    "ValueExtractionService",
+    "get_value_extraction_service",
+    "ClinicalNERService",
+    "TransformerNERConfig",
+    "get_clinical_ner_service",
+    "reset_clinical_ner_service",
+    "ExtractedRelation",
+    "RelationExtractionConfig",
+    "RelationExtractionService",
+    "RelationType",
+    "get_relation_extraction_service",
+    "reset_relation_extraction_service",
+    "EnsembleConfig",
+    "EnsembleNLPService",
+    "EnsembleResult",
+    "get_ensemble_nlp_service",
+    "reset_ensemble_nlp_service",
 ]

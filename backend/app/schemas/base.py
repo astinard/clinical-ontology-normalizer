@@ -37,6 +37,7 @@ class Domain(str, Enum):
     OBSERVATION = "observation"
     DEVICE = "device"
     VISIT = "visit"
+    SPEC_ANATOMIC_SITE = "spec_anatomic_site"
 
 
 class JobStatus(str, Enum):

@@ -10,10 +10,12 @@ Models:
 - ClinicalFact, FactEvidence (task 2.5)
 - KGNode, KGEdge (task 2.6)
 - Concept, ConceptSynonym (task 2.7)
+- ClinicalValue (P3-1 value extraction)
 """
 
 from app.core.database import Base
 from app.models.clinical_fact import ClinicalFact, FactEvidence
+from app.models.clinical_value import ClinicalValue, ValueType
 from app.models.document import Document, StructuredResource
 from app.models.knowledge_graph import KGEdge, KGNode
 from app.models.mention import Mention, MentionConceptCandidate
@@ -31,4 +33,6 @@ __all__ = [
     "KGEdge",
     "Concept",
     "ConceptSynonym",
+    "ClinicalValue",
+    "ValueType",
 ]

@@ -100,6 +100,13 @@ from app.services.lab_reference import (
     get_lab_reference_service,
     reset_lab_reference_service,
 )
+from app.services.clinical_calculators import (
+    CalculatorResult,
+    ClinicalCalculatorService,
+    RiskLevel,
+    get_clinical_calculator_service,
+    reset_clinical_calculator_service,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -171,4 +178,9 @@ __all__ = [
     "ReferenceRange",
     "get_lab_reference_service",
     "reset_lab_reference_service",
+    "CalculatorResult",
+    "ClinicalCalculatorService",
+    "RiskLevel",
+    "get_clinical_calculator_service",
+    "reset_clinical_calculator_service",
 ]

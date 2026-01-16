@@ -1160,3 +1160,264 @@ async def interpret_lab_values(
         interpret_time_ms=round(interpret_time_ms, 2),
         database_stats=service.get_stats(),
     )
+
+
+# ============================================================================
+# Clinical Calculator Endpoint
+# ============================================================================
+
+
+class CalculatorRequest(BaseModel):
+    """Request body for clinical calculator."""
+
+    calculator: str = Field(
+        ...,
+        description="Calculator name: bmi, chadsvasc, hasbled, meld, egfr, wells_dvt, curb65, framingham",
+    )
+    parameters: dict = Field(
+        ...,
+        description="Calculator-specific parameters",
+    )
+
+
+class CalculatorResultResponse(BaseModel):
+    """Response from clinical calculator."""
+
+    calculator_name: str = Field(..., description="Full name of the calculator")
+    score: float = Field(..., description="Calculated score")
+    score_unit: str = Field(..., description="Unit of the score (points, %, kg/m2, etc.)")
+    risk_level: str = Field(..., description="Risk level (low, moderate, high, very_high)")
+    interpretation: str = Field(..., description="Clinical interpretation of the score")
+    recommendations: list[str] = Field(..., description="Clinical recommendations based on score")
+    components: dict = Field(..., description="Individual components that contribute to the score")
+    references: list[str] = Field(..., description="Source references")
+    calculation_time_ms: float = Field(..., description="Time taken for calculation in ms")
+
+
+class CalculatorListResponse(BaseModel):
+    """Response listing available calculators."""
+
+    calculators: list[dict] = Field(..., description="Available calculators with their parameters")
+    total_count: int = Field(..., description="Total number of calculators")
+
+
+@router.get(
+    "/clinical/calculators",
+    response_model=CalculatorListResponse,
+    summary="List available clinical calculators",
+    description="Get a list of all available clinical risk calculators and their parameters.",
+)
+async def list_calculators() -> CalculatorListResponse:
+    """List all available clinical risk calculators.
+
+    Returns information about each calculator including:
+    - Calculator name and description
+    - Required and optional parameters
+    - Parameter types and valid ranges
+
+    Returns:
+        CalculatorListResponse with available calculators.
+    """
+    from app.services.clinical_calculators import ClinicalCalculatorService
+
+    service = ClinicalCalculatorService()
+
+    calculators = [
+        {
+            "name": "bmi",
+            "full_name": "Body Mass Index (BMI)",
+            "description": "Calculates BMI for obesity classification",
+            "required_params": {"weight_kg": "Weight in kilograms", "height_cm": "Height in centimeters"},
+            "optional_params": {},
+        },
+        {
+            "name": "chadsvasc",
+            "full_name": "CHA₂DS₂-VASc Score",
+            "description": "Stroke risk assessment for atrial fibrillation",
+            "required_params": {"age": "Patient age in years", "female": "True if female sex"},
+            "optional_params": {
+                "congestive_heart_failure": "History of CHF",
+                "hypertension": "History of hypertension",
+                "diabetes": "History of diabetes",
+                "stroke_tia_thromboembolism": "Prior stroke/TIA/thromboembolism",
+                "vascular_disease": "History of vascular disease",
+            },
+        },
+        {
+            "name": "hasbled",
+            "full_name": "HAS-BLED Score",
+            "description": "Bleeding risk in atrial fibrillation patients on anticoagulation",
+            "required_params": {},
+            "optional_params": {
+                "hypertension": "Uncontrolled hypertension (>160 mmHg)",
+                "renal_disease": "Chronic dialysis/transplant/Cr>2.3",
+                "liver_disease": "Chronic liver disease or bilirubin>2x/enzymes>3x",
+                "stroke_history": "Prior stroke history",
+                "bleeding_history": "Prior major bleed or predisposition",
+                "labile_inr": "Unstable/high INRs (time in range <60%)",
+                "age_over_65": "Age > 65 years",
+                "antiplatelet_or_nsaid": "Concurrent antiplatelet or NSAID use",
+                "alcohol": "Alcohol abuse (>8 drinks/week)",
+            },
+        },
+        {
+            "name": "meld",
+            "full_name": "MELD Score (Model for End-Stage Liver Disease)",
+            "description": "Severity of chronic liver disease for transplant prioritization",
+            "required_params": {
+                "creatinine": "Serum creatinine (mg/dL)",
+                "bilirubin": "Total bilirubin (mg/dL)",
+                "inr": "INR",
+            },
+            "optional_params": {
+                "sodium": "Serum sodium (mEq/L) for MELD-Na calculation",
+                "on_dialysis": "On dialysis twice in past week",
+            },
+        },
+        {
+            "name": "egfr",
+            "full_name": "eGFR (CKD-EPI 2021)",
+            "description": "Estimated glomerular filtration rate for kidney function",
+            "required_params": {
+                "creatinine": "Serum creatinine (mg/dL)",
+                "age": "Patient age in years",
+                "female": "True if female sex",
+            },
+            "optional_params": {},
+        },
+        {
+            "name": "wells_dvt",
+            "full_name": "Wells' Criteria for DVT",
+            "description": "Clinical probability of deep vein thrombosis",
+            "required_params": {},
+            "optional_params": {
+                "active_cancer": "Active cancer (within 6 months)",
+                "paralysis_immobilization": "Paralysis/paresis/recent immobilization of lower extremity",
+                "bedridden_3_days": "Bedridden >3 days or major surgery in past 12 weeks",
+                "localized_tenderness": "Localized tenderness along deep venous system",
+                "entire_leg_swollen": "Entire leg swollen",
+                "calf_swelling_3cm": "Calf swelling >3cm vs asymptomatic leg",
+                "pitting_edema": "Pitting edema confined to symptomatic leg",
+                "collateral_superficial_veins": "Collateral superficial veins",
+                "previous_dvt": "Previously documented DVT",
+                "alternative_diagnosis_likely": "Alternative diagnosis as likely or more likely than DVT (-2 points)",
+            },
+        },
+        {
+            "name": "curb65",
+            "full_name": "CURB-65 Score",
+            "description": "Pneumonia severity assessment for disposition decisions",
+            "required_params": {},
+            "optional_params": {
+                "confusion": "New-onset confusion",
+                "bun_over_19": "BUN > 19 mg/dL (or Urea > 7 mmol/L)",
+                "respiratory_rate_over_30": "Respiratory rate >= 30/min",
+                "sbp_under_90_or_dbp_under_60": "SBP < 90 or DBP <= 60 mmHg",
+                "age_65_or_older": "Age >= 65 years",
+            },
+        },
+        {
+            "name": "framingham",
+            "full_name": "Framingham 10-Year CVD Risk",
+            "description": "10-year cardiovascular disease risk prediction",
+            "required_params": {
+                "age": "Patient age (30-74 years)",
+                "female": "True if female sex",
+                "total_cholesterol": "Total cholesterol (mg/dL)",
+                "hdl_cholesterol": "HDL cholesterol (mg/dL)",
+                "systolic_bp": "Systolic blood pressure (mmHg)",
+            },
+            "optional_params": {
+                "bp_treated": "On blood pressure treatment",
+                "smoker": "Current smoker",
+                "diabetic": "Has diabetes",
+            },
+        },
+    ]
+
+    return CalculatorListResponse(
+        calculators=calculators,
+        total_count=len(calculators),
+    )
+
+
+@router.post(
+    "/clinical/calculate",
+    response_model=CalculatorResultResponse,
+    summary="Run a clinical calculator",
+    description="Calculate clinical risk scores using validated calculators.",
+)
+async def run_calculator(
+    request: CalculatorRequest,
+) -> CalculatorResultResponse:
+    """Run a clinical risk calculator.
+
+    Available calculators:
+
+    - **bmi**: Body Mass Index - obesity classification
+    - **chadsvasc**: CHA₂DS₂-VASc - stroke risk in atrial fibrillation
+    - **hasbled**: HAS-BLED - bleeding risk on anticoagulation
+    - **meld**: MELD/MELD-Na - liver disease severity for transplant
+    - **egfr**: CKD-EPI eGFR - estimated kidney function
+    - **wells_dvt**: Wells' Criteria - DVT clinical probability
+    - **curb65**: CURB-65 - pneumonia severity/disposition
+    - **framingham**: Framingham - 10-year CVD risk prediction
+
+    Each calculator returns:
+    - Score with units
+    - Risk level classification
+    - Clinical interpretation
+    - Evidence-based recommendations
+    - Component breakdown
+    - Source references
+
+    Args:
+        request: Calculator name and parameters.
+
+    Returns:
+        CalculatorResultResponse with calculated score and interpretation.
+
+    Raises:
+        HTTPException: 400 if calculator unknown or parameters invalid.
+    """
+    import time
+    from app.services.clinical_calculators import get_clinical_calculator_service
+
+    start_time = time.perf_counter()
+
+    service = get_clinical_calculator_service()
+
+    # Validate calculator exists
+    available = service.get_available_calculators()
+    if request.calculator.lower() not in available:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unknown calculator '{request.calculator}'. Available: {', '.join(available)}",
+        )
+
+    try:
+        result = service.calculate(request.calculator.lower(), **request.parameters)
+    except TypeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid parameters for {request.calculator}: {e}",
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Calculation error for {request.calculator}: {e}",
+        )
+
+    calculation_time_ms = (time.perf_counter() - start_time) * 1000
+
+    return CalculatorResultResponse(
+        calculator_name=result.calculator_name,
+        score=result.score,
+        score_unit=result.score_unit,
+        risk_level=result.risk_level.value,
+        interpretation=result.interpretation,
+        recommendations=result.recommendations,
+        components=result.components,
+        references=result.references,
+        calculation_time_ms=round(calculation_time_ms, 2),
+    )

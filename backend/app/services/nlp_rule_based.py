@@ -14,6 +14,7 @@ import ahocorasick
 
 from app.schemas.base import Assertion, Experiencer, Temporality
 from app.services.nlp import BaseNLPService, ExtractedMention
+from app.services.section_parser import ClinicalSection, SectionParser, get_section_parser
 from app.services.vocabulary import VocabularyService, get_vocabulary_service
 
 if TYPE_CHECKING:
@@ -180,6 +181,9 @@ class RuleBasedNLPService(BaseNLPService):
         self._automaton: "Automaton | None" = None
         self._initialized = False
 
+        # Section parser for section-aware extraction
+        self._section_parser: SectionParser = get_section_parser()
+
     def _initialize_patterns(self) -> None:
         """Build Aho-Corasick automaton from vocabulary terms.
 
@@ -229,7 +233,8 @@ class RuleBasedNLPService(BaseNLPService):
 
         Uses Aho-Corasick for O(n) pattern matching to find clinical
         terms, then applies context rules for assertion, temporality,
-        and experiencer.
+        and experiencer. Section-aware extraction adjusts confidence
+        based on section-domain fit.
 
         Args:
             text: The clinical note text to process.
@@ -246,6 +251,18 @@ class RuleBasedNLPService(BaseNLPService):
 
         mentions: list[ExtractedMention] = []
         seen_spans: set[tuple[int, int]] = set()
+
+        # Parse sections once for efficient O(1) lookups
+        section_spans = self._section_parser.parse(text)
+
+        # Build section lookup map for O(1) access
+        # Key is character offset, value is section
+        def get_section_at_offset(offset: int) -> ClinicalSection:
+            """Get section for offset using pre-parsed sections."""
+            for span in reversed(section_spans):
+                if span.start <= offset:
+                    return span.section
+            return ClinicalSection.UNKNOWN
 
         # Search text with Aho-Corasick automaton (O(n) complexity)
         text_lower = text.lower()
@@ -288,19 +305,27 @@ class RuleBasedNLPService(BaseNLPService):
             temporality = self._detect_temporality(surrounding_context)
             experiencer = self._detect_experiencer(surrounding_context)
 
-            # Get section name
-            section = self.get_section_name(text, start)
+            # Get section using pre-parsed sections (O(1) lookup)
+            clinical_section = get_section_at_offset(start)
+            section_name = clinical_section.value if clinical_section != ClinicalSection.UNKNOWN else None
+
+            # Calculate confidence with section-domain modifier
+            base_confidence = 0.8
+            confidence_modifier = self._section_parser.calculate_confidence_modifier(
+                clinical_section, domain_id or "Observation"
+            )
+            confidence = min(1.0, base_confidence * confidence_modifier)
 
             mention = ExtractedMention(
                 text=matched_text,
                 start_offset=start,
                 end_offset=end,
                 lexical_variant=lexical_variant,
-                section=section,
+                section=section_name,
                 assertion=assertion,
                 temporality=temporality,
                 experiencer=experiencer,
-                confidence=0.8,  # Rule-based confidence
+                confidence=confidence,
                 domain_hint=domain_id,  # Pass domain from vocabulary
                 omop_concept_id=concept_id,  # Direct concept_id if available
             )

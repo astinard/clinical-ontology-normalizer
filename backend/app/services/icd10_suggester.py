@@ -14,8 +14,13 @@ ICD-10-CM codes are for US clinical use.
 
 from dataclasses import dataclass, field
 from enum import Enum
+import json
+import logging
+from pathlib import Path
 import re
 import threading
+
+logger = logging.getLogger(__name__)
 
 
 class CodeConfidence(Enum):
@@ -169,6 +174,85 @@ ICD10_CODES: list[ICD10Code] = [
         category=CodeCategory.E00_E89,
         parent_code="E11",
         synonyms=["uncontrolled diabetes", "high blood sugar"],
+    ),
+    # Diabetes with kidney complications
+    ICD10Code(
+        code="E11.21",
+        description="Type 2 diabetes mellitus with diabetic nephropathy",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        omop_concept_id=45591027,
+        synonyms=["diabetic nephropathy", "diabetic kidney disease", "dm nephropathy", "diabetes with kidney disease"],
+    ),
+    ICD10Code(
+        code="E11.22",
+        description="Type 2 diabetes mellitus with diabetic chronic kidney disease",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        omop_concept_id=45595797,
+        synonyms=["diabetic ckd", "diabetes with ckd", "dm with chronic kidney disease", "type 2 diabetes with ckd", "dm2 with ckd", "diabetes ckd"],
+        use_additional_code="code to identify stage of CKD (N18.1-N18.6)",
+    ),
+    ICD10Code(
+        code="E11.29",
+        description="Type 2 diabetes mellitus with other diabetic kidney complication",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        synonyms=["diabetes kidney complication", "diabetic renal disease"],
+    ),
+    # Diabetes with eye complications
+    ICD10Code(
+        code="E11.319",
+        description="Type 2 diabetes mellitus with unspecified diabetic retinopathy without macular edema",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        synonyms=["diabetic retinopathy", "diabetes eye disease", "dm retinopathy"],
+    ),
+    ICD10Code(
+        code="E11.3211",
+        description="Type 2 diabetes mellitus with mild nonproliferative diabetic retinopathy with macular edema, right eye",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        synonyms=["mild npdr", "mild diabetic retinopathy"],
+    ),
+    # Diabetes with neurological complications
+    ICD10Code(
+        code="E11.40",
+        description="Type 2 diabetes mellitus with diabetic neuropathy, unspecified",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        synonyms=["diabetic neuropathy", "diabetic nerve damage", "dm neuropathy"],
+    ),
+    ICD10Code(
+        code="E11.42",
+        description="Type 2 diabetes mellitus with diabetic polyneuropathy",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        synonyms=["diabetic polyneuropathy", "peripheral neuropathy diabetes"],
+    ),
+    # Diabetes with circulatory complications
+    ICD10Code(
+        code="E11.51",
+        description="Type 2 diabetes mellitus with diabetic peripheral angiopathy without gangrene",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        synonyms=["diabetic pvd", "diabetes peripheral vascular disease", "diabetic angiopathy"],
+    ),
+    ICD10Code(
+        code="E11.52",
+        description="Type 2 diabetes mellitus with diabetic peripheral angiopathy with gangrene",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        synonyms=["diabetic gangrene", "diabetes with gangrene"],
+    ),
+    # Diabetes with foot complications
+    ICD10Code(
+        code="E11.621",
+        description="Type 2 diabetes mellitus with foot ulcer",
+        category=CodeCategory.E00_E89,
+        parent_code="E11",
+        synonyms=["diabetic foot ulcer", "diabetes foot wound", "dm foot ulcer"],
+        use_additional_code="code to identify site of ulcer (L97.4-, L97.5-)",
     ),
     ICD10Code(
         code="E10.9",
@@ -574,6 +658,128 @@ for _code in ICD10_CODES:
 
 
 # ============================================================================
+# Load Extended ICD-10 Codes from Fixture
+# ============================================================================
+
+FIXTURE_FILE = Path(__file__).parent.parent.parent / "fixtures" / "icd10_codes.json"
+
+
+def _get_category_from_code(code: str) -> CodeCategory:
+    """Determine ICD-10 category from code prefix."""
+    if not code:
+        return CodeCategory.R00_R99
+
+    first_char = code[0].upper()
+
+    # Map first character to category
+    category_map = {
+        'A': CodeCategory.A00_B99,
+        'B': CodeCategory.A00_B99,
+        'C': CodeCategory.C00_D49,
+        'D': CodeCategory.C00_D49 if code[:2] <= 'D4' else CodeCategory.D50_D89,
+        'E': CodeCategory.E00_E89,
+        'F': CodeCategory.F01_F99,
+        'G': CodeCategory.G00_G99,
+        'H': CodeCategory.H00_H59 if code[:2] <= 'H5' else CodeCategory.H60_H95,
+        'I': CodeCategory.I00_I99,
+        'J': CodeCategory.J00_J99,
+        'K': CodeCategory.K00_K95,
+        'L': CodeCategory.L00_L99,
+        'M': CodeCategory.M00_M99,
+        'N': CodeCategory.N00_N99,
+        'O': CodeCategory.O00_O9A,
+        'P': CodeCategory.P00_P96,
+        'Q': CodeCategory.Q00_Q99,
+        'R': CodeCategory.R00_R99,
+        'S': CodeCategory.S00_T88,
+        'T': CodeCategory.S00_T88,
+        'V': CodeCategory.V00_Y99,
+        'W': CodeCategory.V00_Y99,
+        'X': CodeCategory.V00_Y99,
+        'Y': CodeCategory.V00_Y99,
+        'Z': CodeCategory.Z00_Z99,
+    }
+
+    return category_map.get(first_char, CodeCategory.R00_R99)
+
+
+def load_extended_icd10_codes() -> tuple[list[ICD10Code], dict[str, list[str]]]:
+    """Load extended ICD-10 codes from fixture file.
+
+    Returns:
+        Tuple of (list of ICD10Code objects, synonym-to-code index)
+    """
+    codes: list[ICD10Code] = []
+    synonym_index: dict[str, list[str]] = {}
+
+    # Start with core codes
+    codes.extend(ICD10_CODES)
+    for _code in ICD10_CODES:
+        for syn in _code.synonyms:
+            syn_lower = syn.lower()
+            if syn_lower not in synonym_index:
+                synonym_index[syn_lower] = []
+            if _code.code not in synonym_index[syn_lower]:
+                synonym_index[syn_lower].append(_code.code)
+
+    # Load from fixture file if available
+    if FIXTURE_FILE.exists():
+        try:
+            with open(FIXTURE_FILE, "r") as f:
+                data = json.load(f)
+
+            concepts = data.get("concepts", [])
+            loaded_codes = set(c.code for c in codes)  # Track already-loaded codes
+
+            for concept in concepts:
+                code_str = concept.get("concept_code", "")
+                if not code_str or code_str in loaded_codes:
+                    continue
+
+                # Create ICD10Code from fixture data
+                category = _get_category_from_code(code_str)
+                synonyms = concept.get("synonyms", [])
+
+                icd_code = ICD10Code(
+                    code=code_str,
+                    description=concept.get("concept_name", ""),
+                    category=category,
+                    is_billable=True,  # Most ICD-10-CM codes are billable
+                    omop_concept_id=concept.get("concept_id"),
+                    synonyms=synonyms,
+                )
+
+                codes.append(icd_code)
+                loaded_codes.add(code_str)
+
+                # Index synonyms
+                for syn in synonyms:
+                    syn_lower = syn.lower()
+                    if syn_lower not in synonym_index:
+                        synonym_index[syn_lower] = []
+                    if code_str not in synonym_index[syn_lower]:
+                        synonym_index[syn_lower].append(code_str)
+
+                # Also index description words as synonyms
+                desc_words = concept.get("concept_name", "").lower().split()
+                meaningful_words = [w for w in desc_words if len(w) > 3 and w not in
+                    {"with", "without", "unspecified", "other", "type", "site", "initial", "subsequent"}]
+                for word in meaningful_words[:3]:  # Limit to avoid huge index
+                    if word not in synonym_index:
+                        synonym_index[word] = []
+                    if code_str not in synonym_index[word]:
+                        synonym_index[word].append(code_str)
+
+            logger.info(f"Loaded {len(codes)} ICD-10 codes ({len(codes) - len(ICD10_CODES)} from fixture)")
+        except Exception as e:
+            logger.warning(f"Failed to load extended ICD-10 codes from {FIXTURE_FILE}: {e}")
+    else:
+        logger.warning(f"ICD-10 fixture file not found: {FIXTURE_FILE}")
+
+    return codes, synonym_index
+
+
+# ============================================================================
 # ICD-10 Suggester Service
 # ============================================================================
 
@@ -605,11 +811,16 @@ class ICD10SuggesterService:
     def __init__(self) -> None:
         """Initialize the ICD-10 suggester service."""
         self._codes: dict[str, ICD10Code] = {}
-        self._synonym_index: dict[str, list[str]] = SYNONYM_TO_CODE.copy()
+        self._synonym_index: dict[str, list[str]] = {}
+
+        # Load extended codes from fixture
+        codes, self._synonym_index = load_extended_icd10_codes()
 
         # Index codes by code
-        for code in ICD10_CODES:
+        for code in codes:
             self._codes[code.code] = code
+
+        logger.info(f"ICD-10 suggester initialized with {len(self._codes)} codes, {len(self._synonym_index)} synonyms")
 
     def suggest_codes(
         self,

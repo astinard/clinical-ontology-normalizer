@@ -4,13 +4,17 @@ Provides drug-drug interaction checking using a curated database of
 known interactions based on FDA and clinical guidelines.
 """
 
+import json
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from threading import Lock
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+FIXTURE_FILE = Path(__file__).parent.parent.parent / "fixtures" / "drug_interactions_expanded.json"
 
 
 class InteractionSeverity(str, Enum):
@@ -476,6 +480,128 @@ DRUG_ALIASES: dict[str, str] = {
 }
 
 
+# ============================================================================
+# Load Extended Drug Interactions from Fixture
+# ============================================================================
+
+
+def _severity_from_string(severity: str) -> InteractionSeverity:
+    """Convert severity string to enum."""
+    severity_map = {
+        "high": InteractionSeverity.MAJOR,
+        "major": InteractionSeverity.MAJOR,
+        "moderate": InteractionSeverity.MODERATE,
+        "low": InteractionSeverity.MINOR,
+        "minor": InteractionSeverity.MINOR,
+        "contraindicated": InteractionSeverity.CONTRAINDICATED,
+    }
+    return severity_map.get(severity.lower(), InteractionSeverity.MODERATE)
+
+
+def _type_from_mechanism(mechanism: str) -> InteractionType:
+    """Infer interaction type from mechanism description."""
+    mechanism_lower = mechanism.lower()
+
+    if "bleeding" in mechanism_lower:
+        return InteractionType.BLEEDING_RISK
+    elif "serotonin" in mechanism_lower:
+        return InteractionType.SEROTONIN_SYNDROME
+    elif "qt" in mechanism_lower or "cardiac" in mechanism_lower:
+        return InteractionType.QT_PROLONGATION
+    elif "hypotension" in mechanism_lower or "blood pressure" in mechanism_lower:
+        return InteractionType.HYPOTENSION
+    elif "potassium" in mechanism_lower or "hyperkalemia" in mechanism_lower:
+        return InteractionType.HYPERKALEMIA
+    elif "glucose" in mechanism_lower or "hypoglycemia" in mechanism_lower:
+        return InteractionType.HYPOGLYCEMIA
+    elif "kidney" in mechanism_lower or "renal" in mechanism_lower or "nephro" in mechanism_lower:
+        return InteractionType.NEPHROTOXICITY
+    elif "liver" in mechanism_lower or "hepato" in mechanism_lower:
+        return InteractionType.HEPATOTOXICITY
+    elif "duplicate" in mechanism_lower or "same class" in mechanism_lower:
+        return InteractionType.DUPLICATE_THERAPY
+    else:
+        return InteractionType.PHARMACODYNAMIC
+
+
+def load_extended_interactions() -> tuple[list[DrugInteraction], dict[str, set[int]], dict[tuple[str, str], int]]:
+    """Load extended drug interactions from fixture file.
+
+    Returns:
+        Tuple of (interactions list, drug index, pair index)
+    """
+    interactions: list[DrugInteraction] = list(DRUG_INTERACTIONS)  # Start with core interactions
+    drug_index: dict[str, set[int]] = {}
+    pair_index: dict[tuple[str, str], int] = {}
+
+    # Index core interactions first
+    for i, interaction in enumerate(interactions):
+        d1 = interaction.drug1.lower()
+        d2 = interaction.drug2.lower()
+
+        if d1 not in drug_index:
+            drug_index[d1] = set()
+        if d2 not in drug_index:
+            drug_index[d2] = set()
+
+        drug_index[d1].add(i)
+        drug_index[d2].add(i)
+
+        pair = tuple(sorted([d1, d2]))
+        pair_index[pair] = i
+
+    # Load from fixture file if available
+    if FIXTURE_FILE.exists():
+        try:
+            with open(FIXTURE_FILE, "r") as f:
+                data = json.load(f)
+
+            fixture_interactions = data.get("interactions", [])
+
+            for item in fixture_interactions:
+                d1 = item.get("drug1", "").lower()
+                d2 = item.get("drug2", "").lower()
+
+                if not d1 or not d2:
+                    continue
+
+                # Skip if we already have this pair
+                pair = tuple(sorted([d1, d2]))
+                if pair in pair_index:
+                    continue
+
+                interaction = DrugInteraction(
+                    drug1=d1,
+                    drug2=d2,
+                    severity=_severity_from_string(item.get("severity", "moderate")),
+                    interaction_type=_type_from_mechanism(item.get("mechanism", "")),
+                    description=item.get("mechanism", ""),
+                    clinical_effect=item.get("effect", ""),
+                    management=item.get("recommendation", "Monitor closely"),
+                    references=[],
+                )
+
+                idx = len(interactions)
+                interactions.append(interaction)
+
+                if d1 not in drug_index:
+                    drug_index[d1] = set()
+                if d2 not in drug_index:
+                    drug_index[d2] = set()
+
+                drug_index[d1].add(idx)
+                drug_index[d2].add(idx)
+                pair_index[pair] = idx
+
+            logger.info(f"Loaded {len(interactions)} drug interactions ({len(fixture_interactions)} from fixture)")
+        except Exception as e:
+            logger.warning(f"Failed to load extended drug interactions from {FIXTURE_FILE}: {e}")
+    else:
+        logger.warning(f"Drug interactions fixture file not found: {FIXTURE_FILE}")
+
+    return interactions, drug_index, pair_index
+
+
 class DrugInteractionService:
     """Service for checking drug-drug interactions.
 
@@ -494,10 +620,10 @@ class DrugInteractionService:
 
     def __init__(self) -> None:
         """Initialize the drug interaction service."""
-        self._interactions = DRUG_INTERACTIONS
-        self._drug_index = _DRUG_INDEX
-        self._pair_index = _PAIR_INDEX
+        # Load extended interactions from fixture
+        self._interactions, self._drug_index, self._pair_index = load_extended_interactions()
         self._aliases = DRUG_ALIASES
+        logger.info(f"Drug interaction service initialized with {len(self._interactions)} interactions")
 
     def normalize_drug_name(self, drug: str) -> str:
         """Normalize drug name to lowercase, resolving aliases.

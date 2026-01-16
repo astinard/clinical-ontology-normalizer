@@ -14,7 +14,14 @@ clinical judgment. Always consult current prescribing information.
 
 from dataclasses import dataclass, field
 from enum import Enum
+import json
+import logging
+from pathlib import Path
 import threading
+
+logger = logging.getLogger(__name__)
+
+FIXTURE_FILE = Path(__file__).parent.parent.parent / "fixtures" / "drug_safety_profiles_expanded.json"
 
 
 class SafetyLevel(Enum):
@@ -596,6 +603,104 @@ DRUG_ALIASES: dict[str, str] = {
 
 
 # ============================================================================
+# Load Extended Drug Safety Profiles from Fixture
+# ============================================================================
+
+
+def _pregnancy_category_from_string(category: str) -> PregnancyCategory:
+    """Convert pregnancy category string to enum."""
+    category_map = {
+        "A": PregnancyCategory.A,
+        "B": PregnancyCategory.B,
+        "C": PregnancyCategory.C,
+        "D": PregnancyCategory.D,
+        "X": PregnancyCategory.X,
+        "C/D": PregnancyCategory.C,  # Take the safer category
+    }
+    return category_map.get(category.upper(), PregnancyCategory.UNKNOWN)
+
+
+def load_extended_safety_profiles() -> list[DrugSafetyProfile]:
+    """Load extended drug safety profiles from fixture file.
+
+    Returns:
+        List of DrugSafetyProfile objects
+    """
+    profiles: list[DrugSafetyProfile] = list(DRUG_SAFETY_PROFILES)
+    loaded_drugs = set(p.generic_name.lower() for p in profiles)
+
+    if FIXTURE_FILE.exists():
+        try:
+            with open(FIXTURE_FILE, "r") as f:
+                data = json.load(f)
+
+            fixture_profiles = data.get("profiles", [])
+
+            for item in fixture_profiles:
+                drug_name = item.get("drug_name", "").lower()
+
+                if not drug_name or drug_name in loaded_drugs:
+                    continue
+
+                # Build contraindications
+                contraindications = []
+                for cond in item.get("contraindications", []):
+                    contraindications.append(
+                        DrugContraindication(
+                            condition=cond,
+                            severity=SafetyLevel.CONTRAINDICATED,
+                            rationale=f"Contraindicated in patients with {cond}",
+                        )
+                    )
+
+                # Build dosing guidelines
+                dosing_guidelines = []
+                if item.get("renal_adjustment"):
+                    dosing_guidelines.append(
+                        DosingGuideline(
+                            population="renal_impairment",
+                            adjustment="Dose reduction required",
+                            reason="Reduced renal clearance",
+                        )
+                    )
+                if item.get("hepatic_adjustment"):
+                    dosing_guidelines.append(
+                        DosingGuideline(
+                            population="hepatic_impairment",
+                            adjustment="Dose reduction required",
+                            reason="Reduced hepatic metabolism",
+                        )
+                    )
+
+                # Build warnings
+                black_box_warnings = []
+                if item.get("black_box_warning") and item.get("black_box_text"):
+                    black_box_warnings.append(item["black_box_text"])
+
+                profile = DrugSafetyProfile(
+                    drug_name=item.get("drug_name", "").title(),
+                    generic_name=drug_name,
+                    drug_class=item.get("drug_class", ""),
+                    black_box_warnings=black_box_warnings,
+                    contraindications=contraindications,
+                    pregnancy_category=_pregnancy_category_from_string(item.get("pregnancy_category", "")),
+                    dosing_guidelines=dosing_guidelines,
+                    monitoring_parameters=item.get("monitoring_required", []),
+                )
+
+                profiles.append(profile)
+                loaded_drugs.add(drug_name)
+
+            logger.info(f"Loaded {len(profiles)} drug safety profiles ({len(fixture_profiles)} from fixture)")
+        except Exception as e:
+            logger.warning(f"Failed to load extended safety profiles from {FIXTURE_FILE}: {e}")
+    else:
+        logger.warning(f"Drug safety fixture file not found: {FIXTURE_FILE}")
+
+    return profiles
+
+
+# ============================================================================
 # Drug Safety Service
 # ============================================================================
 
@@ -629,9 +734,14 @@ class DrugSafetyService:
         self._profiles: dict[str, DrugSafetyProfile] = {}
         self._aliases: dict[str, str] = DRUG_ALIASES
 
+        # Load extended profiles from fixture
+        profiles = load_extended_safety_profiles()
+
         # Index profiles by normalized name
-        for profile in DRUG_SAFETY_PROFILES:
+        for profile in profiles:
             self._profiles[profile.generic_name.lower()] = profile
+
+        logger.info(f"Drug safety service initialized with {len(self._profiles)} drug profiles")
 
     def normalize_drug_name(self, drug: str) -> str:
         """Normalize a drug name to its generic form."""

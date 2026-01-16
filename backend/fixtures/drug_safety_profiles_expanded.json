@@ -1,0 +1,629 @@
+{
+  "profiles": [
+    {
+      "drug_name": "warfarin",
+      "drug_class": "Anticoagulant",
+      "black_box_warning": true,
+      "black_box_text": "Can cause major or fatal bleeding. Regular INR monitoring required.",
+      "contraindications": [
+        "active bleeding",
+        "hemorrhagic stroke",
+        "severe hypertension",
+        "pregnancy"
+      ],
+      "pregnancy_category": "X",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "INR",
+        "signs of bleeding",
+        "hemoglobin"
+      ]
+    },
+    {
+      "drug_name": "metoprolol",
+      "drug_class": "Beta Blocker",
+      "black_box_warning": true,
+      "black_box_text": "Do not discontinue abruptly - risk of exacerbation of angina and MI.",
+      "contraindications": [
+        "sinus bradycardia",
+        "heart block > first degree",
+        "cardiogenic shock",
+        "decompensated heart failure"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "heart rate",
+        "blood pressure",
+        "ECG"
+      ]
+    },
+    {
+      "drug_name": "lisinopril",
+      "drug_class": "ACE Inhibitor",
+      "black_box_warning": true,
+      "black_box_text": "Can cause fetal injury/death when used during pregnancy.",
+      "contraindications": [
+        "pregnancy",
+        "angioedema history",
+        "bilateral renal artery stenosis"
+      ],
+      "pregnancy_category": "D",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "potassium",
+        "creatinine",
+        "blood pressure"
+      ]
+    },
+    {
+      "drug_name": "amlodipine",
+      "drug_class": "Calcium Channel Blocker",
+      "black_box_warning": false,
+      "contraindications": [
+        "severe aortic stenosis",
+        "cardiogenic shock"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "blood pressure",
+        "heart rate",
+        "edema"
+      ]
+    },
+    {
+      "drug_name": "atorvastatin",
+      "drug_class": "Statin",
+      "black_box_warning": false,
+      "contraindications": [
+        "active liver disease",
+        "pregnancy",
+        "breastfeeding"
+      ],
+      "pregnancy_category": "X",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "LFTs",
+        "lipid panel",
+        "CK if symptomatic"
+      ]
+    },
+    {
+      "drug_name": "digoxin",
+      "drug_class": "Cardiac Glycoside",
+      "black_box_warning": false,
+      "contraindications": [
+        "ventricular fibrillation",
+        "hypertrophic cardiomyopathy with outflow obstruction"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "digoxin level",
+        "potassium",
+        "creatinine",
+        "heart rate"
+      ]
+    },
+    {
+      "drug_name": "metformin",
+      "drug_class": "Biguanide",
+      "black_box_warning": true,
+      "black_box_text": "Lactic acidosis risk, especially with renal impairment, hepatic impairment, or iodinated contrast.",
+      "contraindications": [
+        "eGFR < 30",
+        "metabolic acidosis",
+        "acute heart failure"
+      ],
+      "pregnancy_category": "B",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "creatinine",
+        "eGFR",
+        "B12 levels annually"
+      ]
+    },
+    {
+      "drug_name": "insulin",
+      "drug_class": "Insulin",
+      "black_box_warning": false,
+      "contraindications": [
+        "hypoglycemia"
+      ],
+      "pregnancy_category": "B",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "blood glucose",
+        "HbA1c",
+        "hypoglycemia signs"
+      ]
+    },
+    {
+      "drug_name": "glipizide",
+      "drug_class": "Sulfonylurea",
+      "black_box_warning": false,
+      "contraindications": [
+        "DKA",
+        "type 1 diabetes",
+        "severe renal impairment"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "blood glucose",
+        "HbA1c",
+        "hypoglycemia"
+      ]
+    },
+    {
+      "drug_name": "empagliflozin",
+      "drug_class": "SGLT2 Inhibitor",
+      "black_box_warning": false,
+      "contraindications": [
+        "severe renal impairment",
+        "dialysis",
+        "DKA"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "eGFR",
+        "blood glucose",
+        "ketones",
+        "UTI symptoms"
+      ]
+    },
+    {
+      "drug_name": "oxycodone",
+      "drug_class": "Opioid",
+      "black_box_warning": true,
+      "black_box_text": "Risk of addiction, abuse, and misuse. Life-threatening respiratory depression. Neonatal opioid withdrawal syndrome.",
+      "contraindications": [
+        "respiratory depression",
+        "acute/severe asthma",
+        "GI obstruction",
+        "MAOIs within 14 days"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "pain level",
+        "respiratory rate",
+        "sedation",
+        "bowel function"
+      ]
+    },
+    {
+      "drug_name": "morphine",
+      "drug_class": "Opioid",
+      "black_box_warning": true,
+      "black_box_text": "Risk of addiction, abuse, and misuse. Life-threatening respiratory depression.",
+      "contraindications": [
+        "respiratory depression",
+        "acute/severe asthma",
+        "GI obstruction"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "pain level",
+        "respiratory rate",
+        "sedation"
+      ]
+    },
+    {
+      "drug_name": "tramadol",
+      "drug_class": "Opioid",
+      "black_box_warning": true,
+      "black_box_text": "Risk of addiction. Respiratory depression. Serotonin syndrome with SSRIs/SNRIs. Seizure risk.",
+      "contraindications": [
+        "seizure disorder",
+        "MAOIs",
+        "severe respiratory depression"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "pain level",
+        "seizure risk",
+        "serotonin syndrome signs"
+      ]
+    },
+    {
+      "drug_name": "ibuprofen",
+      "drug_class": "NSAID",
+      "black_box_warning": true,
+      "black_box_text": "Increased risk of serious cardiovascular thrombotic events, MI, and stroke. GI bleeding, ulceration, perforation risk.",
+      "contraindications": [
+        "aspirin-sensitive asthma",
+        "CABG surgery",
+        "active GI bleeding",
+        "severe renal impairment"
+      ],
+      "pregnancy_category": "C/D",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "renal function",
+        "GI symptoms",
+        "blood pressure"
+      ]
+    },
+    {
+      "drug_name": "sertraline",
+      "drug_class": "SSRI",
+      "black_box_warning": true,
+      "black_box_text": "Suicidality risk in children, adolescents, and young adults.",
+      "contraindications": [
+        "MAOIs within 14 days",
+        "pimozide use",
+        "concurrent linezolid/IV methylene blue"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "suicidal ideation",
+        "serotonin syndrome",
+        "bleeding"
+      ]
+    },
+    {
+      "drug_name": "fluoxetine",
+      "drug_class": "SSRI",
+      "black_box_warning": true,
+      "black_box_text": "Suicidality risk in children, adolescents, and young adults.",
+      "contraindications": [
+        "MAOIs within 14 days",
+        "thioridazine use",
+        "pimozide use"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "suicidal ideation",
+        "serotonin syndrome",
+        "weight"
+      ]
+    },
+    {
+      "drug_name": "quetiapine",
+      "drug_class": "Atypical Antipsychotic",
+      "black_box_warning": true,
+      "black_box_text": "Increased mortality in elderly dementia patients. Suicidality in young adults.",
+      "contraindications": [
+        "dementia-related psychosis in elderly"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "metabolic parameters",
+        "tardive dyskinesia",
+        "suicidal ideation",
+        "orthostatic hypotension"
+      ]
+    },
+    {
+      "drug_name": "lithium",
+      "drug_class": "Mood Stabilizer",
+      "black_box_warning": true,
+      "black_box_text": "Lithium toxicity can occur at doses close to therapeutic levels. Serum lithium monitoring required.",
+      "contraindications": [
+        "severe renal impairment",
+        "severe cardiovascular disease",
+        "dehydration"
+      ],
+      "pregnancy_category": "D",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "lithium level",
+        "renal function",
+        "thyroid function",
+        "ECG"
+      ]
+    },
+    {
+      "drug_name": "alprazolam",
+      "drug_class": "Benzodiazepine",
+      "black_box_warning": true,
+      "black_box_text": "Concomitant use with opioids may result in profound sedation, respiratory depression, and death.",
+      "contraindications": [
+        "acute narrow-angle glaucoma",
+        "concurrent ketoconazole/itraconazole"
+      ],
+      "pregnancy_category": "D",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "respiratory rate",
+        "sedation",
+        "dependence",
+        "fall risk"
+      ]
+    },
+    {
+      "drug_name": "ciprofloxacin",
+      "drug_class": "Fluoroquinolone",
+      "black_box_warning": true,
+      "black_box_text": "Risk of tendinitis, tendon rupture, peripheral neuropathy, CNS effects, and myasthenia gravis exacerbation.",
+      "contraindications": [
+        "myasthenia gravis",
+        "concurrent tizanidine"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "tendon pain",
+        "neurological symptoms",
+        "QT interval"
+      ]
+    },
+    {
+      "drug_name": "amoxicillin",
+      "drug_class": "Penicillin",
+      "black_box_warning": false,
+      "contraindications": [
+        "penicillin allergy",
+        "infectious mononucleosis"
+      ],
+      "pregnancy_category": "B",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "allergic reaction",
+        "C. diff symptoms",
+        "rash"
+      ]
+    },
+    {
+      "drug_name": "vancomycin",
+      "drug_class": "Glycopeptide",
+      "black_box_warning": false,
+      "contraindications": [
+        "known hypersensitivity"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "vancomycin trough",
+        "creatinine",
+        "audiometry",
+        "red man syndrome"
+      ]
+    },
+    {
+      "drug_name": "azithromycin",
+      "drug_class": "Macrolide",
+      "black_box_warning": false,
+      "contraindications": [
+        "history of cholestatic jaundice with prior azithromycin",
+        "QT prolongation"
+      ],
+      "pregnancy_category": "B",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "QT interval",
+        "LFTs",
+        "hearing"
+      ]
+    },
+    {
+      "drug_name": "omeprazole",
+      "drug_class": "PPI",
+      "black_box_warning": false,
+      "contraindications": [
+        "rilpivirine use"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "magnesium",
+        "B12",
+        "bone density with long-term use"
+      ]
+    },
+    {
+      "drug_name": "ondansetron",
+      "drug_class": "5-HT3 Antagonist",
+      "black_box_warning": false,
+      "contraindications": [
+        "congenital long QT syndrome",
+        "concurrent apomorphine"
+      ],
+      "pregnancy_category": "B",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "QT interval",
+        "electrolytes"
+      ]
+    },
+    {
+      "drug_name": "albuterol",
+      "drug_class": "Beta-2 Agonist",
+      "black_box_warning": false,
+      "contraindications": [
+        "hypersensitivity to albuterol"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": false,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "heart rate",
+        "potassium",
+        "blood pressure"
+      ]
+    },
+    {
+      "drug_name": "prednisone",
+      "drug_class": "Corticosteroid",
+      "black_box_warning": false,
+      "contraindications": [
+        "systemic fungal infections",
+        "live vaccines"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": false,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "blood glucose",
+        "blood pressure",
+        "bone density",
+        "adrenal function"
+      ]
+    },
+    {
+      "drug_name": "rivaroxaban",
+      "drug_class": "Factor Xa Inhibitor",
+      "black_box_warning": true,
+      "black_box_text": "Premature discontinuation increases thrombosis risk. Spinal/epidural hematoma risk with neuraxial anesthesia.",
+      "contraindications": [
+        "active pathological bleeding",
+        "severe renal impairment with A-fib indication"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "renal function",
+        "signs of bleeding",
+        "hemoglobin"
+      ]
+    },
+    {
+      "drug_name": "apixaban",
+      "drug_class": "Factor Xa Inhibitor",
+      "black_box_warning": true,
+      "black_box_text": "Premature discontinuation increases thrombosis risk. Spinal/epidural hematoma risk.",
+      "contraindications": [
+        "active pathological bleeding",
+        "severe hepatic impairment"
+      ],
+      "pregnancy_category": "B",
+      "renal_adjustment": true,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "renal function",
+        "hepatic function",
+        "signs of bleeding"
+      ]
+    },
+    {
+      "drug_name": "enoxaparin",
+      "drug_class": "LMWH",
+      "black_box_warning": true,
+      "black_box_text": "Spinal/epidural hematomas can occur with neuraxial anesthesia or spinal puncture.",
+      "contraindications": [
+        "active major bleeding",
+        "thrombocytopenia with positive test for antiplatelet antibody"
+      ],
+      "pregnancy_category": "B",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "anti-Xa levels in renal impairment",
+        "platelet count",
+        "signs of bleeding"
+      ]
+    },
+    {
+      "drug_name": "losartan",
+      "drug_class": "ARB",
+      "black_box_warning": true,
+      "black_box_text": "Can cause fetal injury/death when used during pregnancy.",
+      "contraindications": [
+        "pregnancy",
+        "concurrent aliskiren in diabetes"
+      ],
+      "pregnancy_category": "D",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "potassium",
+        "creatinine",
+        "blood pressure"
+      ]
+    },
+    {
+      "drug_name": "furosemide",
+      "drug_class": "Loop Diuretic",
+      "black_box_warning": true,
+      "black_box_text": "Can lead to profound diuresis with water and electrolyte depletion if given in excess.",
+      "contraindications": [
+        "anuria",
+        "severe electrolyte depletion"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "electrolytes",
+        "renal function",
+        "blood pressure",
+        "hearing"
+      ]
+    },
+    {
+      "drug_name": "spironolactone",
+      "drug_class": "Potassium-sparing Diuretic",
+      "black_box_warning": true,
+      "black_box_text": "Shown to be tumorigenic in chronic rat toxicity studies.",
+      "contraindications": [
+        "anuria",
+        "acute renal insufficiency",
+        "hyperkalemia",
+        "Addison's disease"
+      ],
+      "pregnancy_category": "C",
+      "renal_adjustment": true,
+      "hepatic_adjustment": false,
+      "monitoring_required": [
+        "potassium",
+        "creatinine",
+        "blood pressure"
+      ]
+    },
+    {
+      "drug_name": "amiodarone",
+      "drug_class": "Antiarrhythmic",
+      "black_box_warning": true,
+      "black_box_text": "Pulmonary toxicity, hepatotoxicity, and proarrhythmia can occur.",
+      "contraindications": [
+        "cardiogenic shock",
+        "sick sinus syndrome",
+        "second/third degree AV block without pacemaker"
+      ],
+      "pregnancy_category": "D",
+      "renal_adjustment": false,
+      "hepatic_adjustment": true,
+      "monitoring_required": [
+        "thyroid function",
+        "LFTs",
+        "pulmonary function",
+        "ECG",
+        "ophthalmologic exam"
+      ]
+    }
+  ]
+}

@@ -15,7 +15,12 @@ Code suggestions should be verified by qualified medical coders.
 
 from dataclasses import dataclass, field
 from enum import Enum
+import json
+import logging
+from pathlib import Path
 import threading
+
+logger = logging.getLogger(__name__)
 
 
 class CPTCategory(Enum):
@@ -526,6 +531,301 @@ CPT_CODES: list[CPTCode] = [
         ],
         common_diagnoses=["I10", "E11.9"],
     ),
+
+    # =========================================================================
+    # RADIOLOGY - CT SCANS
+    # =========================================================================
+    CPTCode(
+        code="70450",
+        description="Computed tomography, head or brain; without contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=0.85,
+        synonyms=["ct head", "ct brain", "head ct", "brain ct", "ct scan head"],
+        documentation_elements=["CT head/brain performed", "Indication documented"],
+        common_diagnoses=["R51", "S06.9X0A", "I63.9"],
+    ),
+    CPTCode(
+        code="70460",
+        description="Computed tomography, head or brain; with contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.13,
+        synonyms=["ct head with contrast", "ct brain with contrast"],
+        common_diagnoses=["R51", "C71.9"],
+    ),
+    CPTCode(
+        code="71250",
+        description="Computed tomography, thorax; without contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.16,
+        synonyms=["ct chest", "chest ct", "ct thorax", "ct scan chest"],
+        common_diagnoses=["R91.8", "J18.9", "C34.90"],
+    ),
+    CPTCode(
+        code="71260",
+        description="Computed tomography, thorax; with contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.38,
+        synonyms=["ct chest with contrast", "cta chest"],
+        common_diagnoses=["I26.99", "C34.90"],
+    ),
+    CPTCode(
+        code="74176",
+        description="Computed tomography, abdomen and pelvis; without contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.74,
+        synonyms=["ct abdomen", "ct pelvis", "ct abd/pelvis", "abdominal ct", "ct scan abdomen"],
+        common_diagnoses=["R10.9", "K35.80", "N20.0"],
+    ),
+    CPTCode(
+        code="74177",
+        description="Computed tomography, abdomen and pelvis; with contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=2.01,
+        synonyms=["ct abdomen pelvis with contrast", "ct ap with contrast"],
+        common_diagnoses=["R10.9", "C18.9", "K80.20"],
+    ),
+
+    # =========================================================================
+    # RADIOLOGY - MRI
+    # =========================================================================
+    CPTCode(
+        code="70551",
+        description="Magnetic resonance imaging, brain; without contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.48,
+        synonyms=["mri brain", "brain mri", "mri head", "head mri"],
+        common_diagnoses=["R51", "G43.909", "I63.9"],
+    ),
+    CPTCode(
+        code="70553",
+        description="Magnetic resonance imaging, brain; without contrast material, followed by contrast and further sequences",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=2.10,
+        synonyms=["mri brain with and without contrast", "mri brain w/wo"],
+        common_diagnoses=["C71.9", "G35", "I63.9"],
+    ),
+    CPTCode(
+        code="72141",
+        description="Magnetic resonance imaging, spinal canal, cervical; without contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.48,
+        synonyms=["mri cervical spine", "mri c-spine", "mri neck"],
+        common_diagnoses=["M54.2", "M50.20"],
+    ),
+    CPTCode(
+        code="72148",
+        description="Magnetic resonance imaging, spinal canal, lumbar; without contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.48,
+        synonyms=["mri lumbar spine", "mri l-spine", "mri lower back", "lumbar mri"],
+        common_diagnoses=["M54.5", "M51.16"],
+    ),
+    CPTCode(
+        code="73721",
+        description="Magnetic resonance imaging, any joint of lower extremity; without contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.30,
+        synonyms=["mri knee", "knee mri", "mri hip", "mri ankle"],
+        common_diagnoses=["M23.90", "S83.509A"],
+    ),
+    CPTCode(
+        code="73221",
+        description="Magnetic resonance imaging, any joint of upper extremity; without contrast material",
+        category=CPTCategory.RADIOLOGY,
+        work_rvu=1.30,
+        synonyms=["mri shoulder", "shoulder mri", "mri elbow", "mri wrist"],
+        common_diagnoses=["M75.10", "S43.409A"],
+    ),
+
+    # =========================================================================
+    # SURGERY - GI PROCEDURES
+    # =========================================================================
+    CPTCode(
+        code="43239",
+        description="Esophagogastroduodenoscopy with biopsy",
+        category=CPTCategory.SURGERY,
+        work_rvu=3.25,
+        synonyms=["egd", "upper endoscopy", "egd with biopsy", "upper gi endoscopy", "esophagogastroduodenoscopy"],
+        documentation_elements=["Procedure findings", "Biopsy sites", "Pathology report"],
+        common_diagnoses=["K21.0", "K25.9", "K29.70"],
+    ),
+    CPTCode(
+        code="45378",
+        description="Colonoscopy, flexible; diagnostic",
+        category=CPTCategory.SURGERY,
+        work_rvu=3.69,
+        synonyms=["colonoscopy", "diagnostic colonoscopy", "colon scope"],
+        documentation_elements=["Procedure findings", "Quality of prep", "Extent of examination"],
+        common_diagnoses=["Z12.11", "K92.1", "K57.30"],
+    ),
+    CPTCode(
+        code="45380",
+        description="Colonoscopy with biopsy",
+        category=CPTCategory.SURGERY,
+        work_rvu=4.43,
+        synonyms=["colonoscopy with biopsy", "colon biopsy"],
+        common_diagnoses=["K51.90", "K50.90", "D12.6"],
+    ),
+    CPTCode(
+        code="45385",
+        description="Colonoscopy with removal of polyp(s) by snare technique",
+        category=CPTCategory.SURGERY,
+        work_rvu=5.18,
+        synonyms=["colonoscopy polypectomy", "polyp removal", "colonoscopy with polypectomy"],
+        common_diagnoses=["D12.6", "K63.5"],
+    ),
+
+    # =========================================================================
+    # VACCINATIONS / IMMUNIZATIONS
+    # =========================================================================
+    CPTCode(
+        code="90471",
+        description="Immunization administration (first vaccine/toxoid)",
+        category=CPTCategory.MEDICINE,
+        work_rvu=0.17,
+        synonyms=["vaccine administration", "immunization", "vaccination", "shot administration"],
+        documentation_elements=["Vaccine administered", "Route", "Site"],
+        common_diagnoses=["Z23"],
+    ),
+    CPTCode(
+        code="90472",
+        description="Immunization administration (each additional vaccine/toxoid)",
+        category=CPTCategory.MEDICINE,
+        work_rvu=0.15,
+        synonyms=["additional vaccine", "second vaccine"],
+        common_diagnoses=["Z23"],
+    ),
+    CPTCode(
+        code="90658",
+        description="Influenza virus vaccine, split virus, for intramuscular use",
+        category=CPTCategory.MEDICINE,
+        synonyms=["flu shot", "flu vaccine", "influenza vaccine", "flu"],
+        common_diagnoses=["Z23"],
+    ),
+    CPTCode(
+        code="90715",
+        description="Tetanus, diphtheria toxoids and acellular pertussis vaccine (Tdap)",
+        category=CPTCategory.MEDICINE,
+        synonyms=["tdap", "tetanus shot", "tetanus vaccine", "pertussis vaccine"],
+        common_diagnoses=["Z23"],
+    ),
+    CPTCode(
+        code="90732",
+        description="Pneumococcal polysaccharide vaccine, 23-valent (PPSV23)",
+        category=CPTCategory.MEDICINE,
+        synonyms=["pneumonia vaccine", "pneumococcal vaccine", "ppsv23", "pneumovax"],
+        common_diagnoses=["Z23"],
+    ),
+    CPTCode(
+        code="90750",
+        description="Zoster (shingles) vaccine, recombinant, adjuvanted (Shingrix)",
+        category=CPTCategory.MEDICINE,
+        synonyms=["shingles vaccine", "shingrix", "zoster vaccine", "herpes zoster vaccine"],
+        common_diagnoses=["Z23"],
+    ),
+
+    # =========================================================================
+    # PHYSICAL THERAPY / REHABILITATION
+    # =========================================================================
+    CPTCode(
+        code="97110",
+        description="Therapeutic procedure, therapeutic exercises",
+        category=CPTCategory.MEDICINE,
+        work_rvu=0.45,
+        typical_time_minutes=15,
+        synonyms=["therapeutic exercise", "pt exercises", "physical therapy", "exercise therapy"],
+        common_diagnoses=["M54.5", "M17.9", "S83.509A"],
+    ),
+    CPTCode(
+        code="97140",
+        description="Manual therapy techniques (eg, mobilization, manipulation)",
+        category=CPTCategory.MEDICINE,
+        work_rvu=0.43,
+        typical_time_minutes=15,
+        synonyms=["manual therapy", "manipulation", "mobilization", "joint mobilization"],
+        common_diagnoses=["M54.5", "M54.2", "M25.50"],
+    ),
+    CPTCode(
+        code="97530",
+        description="Therapeutic activities, direct patient contact",
+        category=CPTCategory.MEDICINE,
+        work_rvu=0.44,
+        typical_time_minutes=15,
+        synonyms=["therapeutic activities", "functional training", "adl training"],
+        common_diagnoses=["M54.5", "I63.9", "S72.90XA"],
+    ),
+    CPTCode(
+        code="97161",
+        description="Physical therapy evaluation, low complexity",
+        category=CPTCategory.MEDICINE,
+        work_rvu=1.20,
+        synonyms=["pt evaluation", "physical therapy eval", "pt eval low"],
+        common_diagnoses=["M54.5", "M79.3"],
+    ),
+    CPTCode(
+        code="97162",
+        description="Physical therapy evaluation, moderate complexity",
+        category=CPTCategory.MEDICINE,
+        work_rvu=1.50,
+        synonyms=["pt evaluation moderate", "physical therapy eval moderate"],
+        common_diagnoses=["M54.5", "S83.509A", "M17.9"],
+    ),
+
+    # =========================================================================
+    # SURGERY - ORTHOPEDIC
+    # =========================================================================
+    CPTCode(
+        code="29881",
+        description="Arthroscopy, knee, surgical; with meniscectomy",
+        category=CPTCategory.SURGERY,
+        work_rvu=8.67,
+        synonyms=["knee arthroscopy", "knee scope", "meniscectomy", "meniscus surgery"],
+        common_diagnoses=["M23.20", "S83.20XA"],
+    ),
+    CPTCode(
+        code="27447",
+        description="Arthroplasty, knee, condyle and plateau; medial AND lateral compartments (total knee)",
+        category=CPTCategory.SURGERY,
+        work_rvu=20.69,
+        synonyms=["total knee replacement", "tkr", "knee replacement", "total knee arthroplasty"],
+        common_diagnoses=["M17.11", "M17.12"],
+    ),
+    CPTCode(
+        code="27130",
+        description="Arthroplasty, acetabular and proximal femoral prosthetic replacement (total hip)",
+        category=CPTCategory.SURGERY,
+        work_rvu=20.05,
+        synonyms=["total hip replacement", "thr", "hip replacement", "total hip arthroplasty"],
+        common_diagnoses=["M16.11", "S72.001A"],
+    ),
+
+    # =========================================================================
+    # CARDIOVASCULAR PROCEDURES
+    # =========================================================================
+    CPTCode(
+        code="93306",
+        description="Echocardiography, transthoracic, with Doppler",
+        category=CPTCategory.MEDICINE,
+        work_rvu=1.50,
+        synonyms=["echo", "echocardiogram", "tte", "transthoracic echo", "cardiac echo"],
+        common_diagnoses=["I50.9", "I25.10", "I42.9"],
+    ),
+    CPTCode(
+        code="93458",
+        description="Catheter placement in coronary artery(s), selective coronary angiography",
+        category=CPTCategory.SURGERY,
+        work_rvu=6.37,
+        synonyms=["cardiac cath", "heart cath", "coronary angiography", "left heart cath"],
+        common_diagnoses=["I25.10", "I21.9", "R07.9"],
+    ),
+    CPTCode(
+        code="92928",
+        description="Percutaneous coronary intervention; single major coronary artery or branch",
+        category=CPTCategory.SURGERY,
+        work_rvu=12.43,
+        synonyms=["pci", "coronary stent", "angioplasty", "ptca", "stent placement"],
+        common_diagnoses=["I21.9", "I25.10"],
+    ),
 ]
 
 
@@ -537,6 +837,113 @@ for _code in CPT_CODES:
         if syn_lower not in SYNONYM_TO_CPT:
             SYNONYM_TO_CPT[syn_lower] = []
         SYNONYM_TO_CPT[syn_lower].append(_code.code)
+
+
+# ============================================================================
+# Load Extended CPT/HCPCS Codes from Fixture
+# ============================================================================
+
+FIXTURE_FILE = Path(__file__).parent.parent.parent / "fixtures" / "cpt_codes.json"
+
+
+def _get_cpt_category(domain: str, concept_class: str) -> CPTCategory:
+    """Determine CPT category from domain and concept class."""
+    domain_lower = domain.lower() if domain else ""
+    class_lower = concept_class.lower() if concept_class else ""
+
+    if "evaluation" in class_lower or "e/m" in class_lower:
+        return CPTCategory.EVALUATION_MANAGEMENT
+    elif "anesthesia" in class_lower:
+        return CPTCategory.ANESTHESIA
+    elif "surgery" in class_lower or "surgical" in class_lower:
+        return CPTCategory.SURGERY
+    elif "radiology" in class_lower or "imaging" in class_lower:
+        return CPTCategory.RADIOLOGY
+    elif "pathology" in class_lower or "laboratory" in class_lower or "lab" in class_lower:
+        return CPTCategory.PATHOLOGY
+    elif domain_lower == "measurement":
+        return CPTCategory.PATHOLOGY
+    elif domain_lower == "procedure":
+        return CPTCategory.SURGERY
+    else:
+        return CPTCategory.MEDICINE
+
+
+def load_extended_cpt_codes() -> tuple[list[CPTCode], dict[str, list[str]]]:
+    """Load extended CPT/HCPCS codes from fixture file.
+
+    Returns:
+        Tuple of (list of CPTCode objects, synonym-to-code index)
+    """
+    codes: list[CPTCode] = []
+    synonym_index: dict[str, list[str]] = {}
+
+    # Start with core codes
+    codes.extend(CPT_CODES)
+    for _code in CPT_CODES:
+        for syn in _code.synonyms:
+            syn_lower = syn.lower()
+            if syn_lower not in synonym_index:
+                synonym_index[syn_lower] = []
+            if _code.code not in synonym_index[syn_lower]:
+                synonym_index[syn_lower].append(_code.code)
+
+    # Load from fixture file if available
+    if FIXTURE_FILE.exists():
+        try:
+            with open(FIXTURE_FILE, "r") as f:
+                data = json.load(f)
+
+            concepts = data.get("concepts", [])
+            loaded_codes = set(c.code for c in codes)
+
+            for concept in concepts:
+                code_str = concept.get("concept_code", "")
+                if not code_str or code_str in loaded_codes:
+                    continue
+
+                category = _get_cpt_category(
+                    concept.get("domain_id", ""),
+                    concept.get("concept_class_id", "")
+                )
+                synonyms = concept.get("synonyms", [])
+                description = concept.get("concept_name", "")
+
+                cpt_code = CPTCode(
+                    code=code_str,
+                    description=description,
+                    category=category,
+                    synonyms=synonyms,
+                )
+
+                codes.append(cpt_code)
+                loaded_codes.add(code_str)
+
+                # Index synonyms
+                for syn in synonyms:
+                    syn_lower = syn.lower()
+                    if syn_lower not in synonym_index:
+                        synonym_index[syn_lower] = []
+                    if code_str not in synonym_index[syn_lower]:
+                        synonym_index[syn_lower].append(code_str)
+
+                # Index description words
+                desc_words = description.lower().split()
+                meaningful_words = [w for w in desc_words if len(w) > 4 and w not in
+                    {"services", "procedure", "other", "unspecified", "without", "with"}]
+                for word in meaningful_words[:3]:
+                    if word not in synonym_index:
+                        synonym_index[word] = []
+                    if code_str not in synonym_index[word]:
+                        synonym_index[word].append(code_str)
+
+            logger.info(f"Loaded {len(codes)} CPT/HCPCS codes ({len(codes) - len(CPT_CODES)} from fixture)")
+        except Exception as e:
+            logger.warning(f"Failed to load extended CPT codes from {FIXTURE_FILE}: {e}")
+    else:
+        logger.warning(f"CPT fixture file not found: {FIXTURE_FILE}")
+
+    return codes, synonym_index
 
 
 # ============================================================================
@@ -571,10 +978,15 @@ class CPTSuggesterService:
     def __init__(self) -> None:
         """Initialize the CPT suggester service."""
         self._codes: dict[str, CPTCode] = {}
-        self._synonym_index: dict[str, list[str]] = SYNONYM_TO_CPT.copy()
+        self._synonym_index: dict[str, list[str]] = {}
 
-        for code in CPT_CODES:
+        # Load extended codes from fixture
+        codes, self._synonym_index = load_extended_cpt_codes()
+
+        for code in codes:
             self._codes[code.code] = code
+
+        logger.info(f"CPT suggester initialized with {len(self._codes)} codes, {len(self._synonym_index)} synonyms")
 
     def suggest_codes(
         self,

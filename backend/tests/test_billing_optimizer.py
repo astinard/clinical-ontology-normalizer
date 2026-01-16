@@ -277,7 +277,7 @@ class TestMissedServices:
         result = self.service.analyze_encounter(codes, context)
 
         missed_findings = [
-            f for f in missed_findings
+            f for f in result.findings
             if f.category == OptimizationCategory.MISSED_SERVICE
             and "99406" in str(f.recommended_code)
         ] if result.findings else []

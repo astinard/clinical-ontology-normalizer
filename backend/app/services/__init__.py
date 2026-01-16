@@ -190,6 +190,18 @@ from app.services.coding_query_generator import (
     get_coding_query_generator_service,
     reset_coding_query_generator_service,
 )
+from app.services.hcc_analyzer import (
+    CaptureConfidence,
+    GapType,
+    HCCAnalysisResult,
+    HCCAnalyzerService,
+    HCCCategory,
+    HCCDefinition,
+    HCCEvidence,
+    HCCOpportunity,
+    get_hcc_analyzer_service,
+    reset_hcc_analyzer_service,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -333,4 +345,14 @@ __all__ = [
     "ResponseOption",
     "get_coding_query_generator_service",
     "reset_coding_query_generator_service",
+    "CaptureConfidence",
+    "GapType",
+    "HCCAnalysisResult",
+    "HCCAnalyzerService",
+    "HCCCategory",
+    "HCCDefinition",
+    "HCCEvidence",
+    "HCCOpportunity",
+    "get_hcc_analyzer_service",
+    "reset_hcc_analyzer_service",
 ]

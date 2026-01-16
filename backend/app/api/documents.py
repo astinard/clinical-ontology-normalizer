@@ -2353,6 +2353,185 @@ async def generate_coding_queries(
 
 
 # ============================================================================
+# HCC Revenue Recovery Endpoints
+# ============================================================================
+
+
+class HCCAnalyzeRequest(BaseModel):
+    """Request body for HCC revenue recovery analysis."""
+
+    clinical_text: str = Field(
+        ...,
+        description="Clinical documentation text to analyze",
+        min_length=10,
+    )
+    current_icd10_codes: list[str] = Field(
+        default_factory=list,
+        description="Currently coded ICD-10 diagnoses for this patient",
+    )
+    lab_values: list[dict] = Field(
+        default_factory=list,
+        description="Lab results (name, value, unit, date)",
+    )
+    patient_id: str | None = Field(None, description="Patient identifier")
+    encounter_id: str | None = Field(None, description="Encounter identifier")
+    setting: str = Field("community", description="community or institutional")
+
+
+class HCCEvidenceResponse(BaseModel):
+    """Evidence supporting an HCC finding."""
+
+    source_type: str
+    source_text: str
+    source_date: str | None = None
+    confidence: float
+
+
+class HCCOpportunityResponse(BaseModel):
+    """An HCC revenue opportunity."""
+
+    hcc_code: str
+    hcc_description: str
+    category: str
+    gap_type: str
+    capture_confidence: str
+    raf_value: float
+    estimated_revenue: float
+    evidence: list[HCCEvidenceResponse]
+    supporting_icd10_codes: list[str]
+    current_coded_icd10: str | None = None
+    recommended_icd10: str | None = None
+    documentation_needed: list[str]
+    coder_notes: str
+
+
+class HCCAnalysisResponse(BaseModel):
+    """Response for HCC revenue recovery analysis."""
+
+    # Opportunities
+    opportunities: list[HCCOpportunityResponse]
+    total_opportunities: int
+
+    # Financial summary
+    total_raf_opportunity: float
+    total_estimated_revenue: float
+    high_confidence_revenue: float
+
+    # Breakdown
+    by_category: dict[str, int]
+    by_gap_type: dict[str, int]
+    by_confidence: dict[str, int]
+
+    # Current vs projected state
+    current_hccs: list[str]
+    current_raf_score: float
+    projected_hccs: list[str]
+    projected_raf_score: float
+
+    # Actions
+    priority_actions: list[str]
+
+    # Metadata
+    analysis_date: str
+    analysis_time_ms: float
+
+
+@router.post(
+    "/clinical/hcc-analyze",
+    response_model=HCCAnalysisResponse,
+    tags=["clinical-decision-support"],
+    summary="Analyze for HCC revenue recovery opportunities",
+)
+async def analyze_hcc_opportunities(
+    request: HCCAnalyzeRequest,
+) -> HCCAnalysisResponse:
+    """
+    Analyze clinical documentation for HCC (Hierarchical Condition Category)
+    revenue recovery opportunities for Medicare Advantage risk adjustment.
+
+    This endpoint:
+    - Maps current ICD-10 codes to HCC categories
+    - Scans documentation for undocumented/underspecified conditions
+    - Identifies HCC gaps (documented but not coded, needs specificity, suspect)
+    - Calculates RAF (Risk Adjustment Factor) impact
+    - Estimates annual revenue opportunity
+    - Generates prioritized action items for coders
+
+    HCC Model V28 (2024) is used for RAF calculations.
+
+    **Use cases:**
+    - Pre-visit chart review for Annual Wellness Visits
+    - Retrospective coding review
+    - Risk adjustment optimization
+    - Revenue cycle improvement
+    """
+    from app.services.hcc_analyzer import get_hcc_analyzer_service
+
+    service = get_hcc_analyzer_service()
+
+    patient_context = {
+        "patient_id": request.patient_id,
+        "encounter_id": request.encounter_id,
+        "setting": request.setting,
+    }
+
+    result = service.analyze_patient(
+        clinical_text=request.clinical_text,
+        current_icd10_codes=request.current_icd10_codes,
+        lab_values=request.lab_values,
+        patient_context=patient_context,
+    )
+
+    # Convert opportunities to response format
+    opportunities = []
+    for opp in result.opportunities:
+        evidence = [
+            HCCEvidenceResponse(
+                source_type=e.source_type,
+                source_text=e.source_text,
+                source_date=e.source_date,
+                confidence=e.confidence,
+            )
+            for e in opp.evidence
+        ]
+        opportunities.append(
+            HCCOpportunityResponse(
+                hcc_code=opp.hcc_code,
+                hcc_description=opp.hcc_description,
+                category=opp.category.value,
+                gap_type=opp.gap_type.value,
+                capture_confidence=opp.capture_confidence.value,
+                raf_value=opp.raf_value,
+                estimated_revenue=opp.estimated_revenue,
+                evidence=evidence,
+                supporting_icd10_codes=opp.supporting_icd10_codes,
+                current_coded_icd10=opp.current_coded_icd10,
+                recommended_icd10=opp.recommended_icd10,
+                documentation_needed=opp.documentation_needed,
+                coder_notes=opp.coder_notes,
+            )
+        )
+
+    return HCCAnalysisResponse(
+        opportunities=opportunities,
+        total_opportunities=result.total_opportunities,
+        total_raf_opportunity=result.total_raf_opportunity,
+        total_estimated_revenue=result.total_estimated_revenue,
+        high_confidence_revenue=result.high_confidence_revenue,
+        by_category=result.by_category,
+        by_gap_type=result.by_gap_type,
+        by_confidence=result.by_confidence,
+        current_hccs=result.current_hccs,
+        current_raf_score=result.current_raf_score,
+        projected_hccs=result.projected_hccs,
+        projected_raf_score=result.projected_raf_score,
+        priority_actions=result.priority_actions,
+        analysis_date=result.analysis_date,
+        analysis_time_ms=result.analysis_time_ms,
+    )
+
+
+# ============================================================================
 # Clinical Summarization Endpoints
 # ============================================================================
 

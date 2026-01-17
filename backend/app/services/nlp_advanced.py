@@ -290,12 +290,23 @@ AMBIGUOUS_ABBREVIATIONS: dict[str, dict[str, dict]] = {
 }
 
 # Negation triggers and clause boundaries
-NEGATION_TRIGGERS = [
+# Pre-mention negation triggers (appear BEFORE the mention)
+NEGATION_TRIGGERS_PRE = [
     "no", "not", "none", "denies", "denied", "without", "negative for",
-    "no evidence of", "absence of", "ruled out", "r/o", "rules out",
-    "free of", "no signs of", "no symptoms of", "never", "neither",
-    "no history of", "no h/o"
+    "no evidence of", "absence of", "r/o", "free of", "no signs of",
+    "no symptoms of", "never", "neither", "no history of", "no h/o"
 ]
+
+# Post-mention negation triggers (appear AFTER the mention)
+NEGATION_TRIGGERS_POST = [
+    "ruled out", "has been ruled out", "was ruled out", "is ruled out",
+    "excluded", "has been excluded", "was excluded", "is excluded",
+    "negative", "was negative", "is negative", "came back negative",
+    "not found", "not seen", "not detected", "not identified"
+]
+
+# Combined for backwards compatibility
+NEGATION_TRIGGERS = NEGATION_TRIGGERS_PRE + NEGATION_TRIGGERS_POST
 
 CLAUSE_BOUNDARIES = [
     "but", "however", "although", "except", "yet", "still", "though",
@@ -303,19 +314,32 @@ CLAUSE_BOUNDARIES = [
 ]
 
 # Compound condition patterns
+# Embedded abbreviation patterns (the modifier IS the abbreviation)
+EMBEDDED_COMPOUND_ABBREVIATIONS = {
+    "hfref": {"base": "heart failure", "modifier": "with reduced EF (HFrEF)"},
+    "hfpef": {"base": "heart failure", "modifier": "with preserved EF (HFpEF)"},
+    "aecopd": {"base": "COPD", "modifier": "with acute exacerbation"},
+    "esrd": {"base": "chronic kidney disease", "modifier": "end-stage (ESRD)"},
+    "t2dm": {"base": "diabetes mellitus", "modifier": "type 2"},
+    "t1dm": {"base": "diabetes mellitus", "modifier": "type 1"},
+    "dm2": {"base": "diabetes mellitus", "modifier": "type 2"},
+    "dm1": {"base": "diabetes mellitus", "modifier": "type 1"},
+}
+
 COMPOUND_PATTERNS: dict[str, dict] = {
     "heart_failure": {
-        "base_patterns": ["heart failure", "hf", "chf", "cardiac failure"],
+        "base_patterns": ["heart failure", "hf", "chf", "cardiac failure", "hfref", "hfpef"],
         "modifiers": [
             {"pattern": r"with\s+reduced\s+ef", "text": "with reduced EF (HFrEF)"},
             {"pattern": r"with\s+preserved\s+ef", "text": "with preserved EF (HFpEF)"},
-            {"pattern": r"hfref", "text": "HFrEF"},
-            {"pattern": r"hfpef", "text": "HFpEF"},
-            {"pattern": r"systolic", "text": "systolic dysfunction"},
-            {"pattern": r"diastolic", "text": "diastolic dysfunction"},
-            {"pattern": r"(?:ef|ejection fraction)\s*(?:of\s*)?(\d+)\s*%?", "text": "EF {0}%"},
-            {"pattern": r"acute\s+(?:on\s+chronic)?", "text": "acute exacerbation"},
+            {"pattern": r"reduced\s+(?:ef|ejection\s+fraction)", "text": "with reduced EF (HFrEF)"},
+            {"pattern": r"preserved\s+(?:ef|ejection\s+fraction)", "text": "with preserved EF (HFpEF)"},
+            {"pattern": r"systolic\s+(?:dysfunction|failure)", "text": "systolic dysfunction"},
+            {"pattern": r"diastolic\s+(?:dysfunction|failure)", "text": "diastolic dysfunction"},
+            {"pattern": r"(?:ef|ejection\s+fraction)\s*(?:of\s*)?~?(\d+)\s*%?", "text": "EF {0}%"},
+            {"pattern": r"acute(?:\s+on\s+chronic)?\s+decompensated", "text": "acute decompensated"},
             {"pattern": r"decompensated", "text": "decompensated"},
+            {"pattern": r"acute\s+(?:on\s+chronic)?", "text": "acute exacerbation"},
         ],
     },
     "diabetes": {
@@ -366,25 +390,31 @@ COMPOUND_PATTERNS: dict[str, dict] = {
             {"pattern": r"poorly\s+controlled", "text": "poorly controlled"},
             {"pattern": r"with\s+ckd", "text": "with CKD"},
             {"pattern": r"with\s+heart\s+failure", "text": "with heart failure"},
+            {"pattern": r"severe", "text": "severe"},
         ],
     },
 }
 
-# Laterality patterns
-LATERALITY_PATTERNS = {
-    Laterality.LEFT: [
-        r"\bleft\b", r"\bl\.\s*", r"\bl\s+(?=\w)", r"\blt\b", r"\bleft-sided\b"
-    ],
-    Laterality.RIGHT: [
-        r"\bright\b", r"\br\.\s*", r"\br\s+(?=\w)", r"\brt\b", r"\bright-sided\b"
-    ],
-    Laterality.BILATERAL: [
-        r"\bbilateral\b", r"\bb/l\b", r"\bbilat\b", r"\bboth\s+(?:sides|extremities|eyes|ears|lungs|kidneys)\b"
-    ],
-    Laterality.UNILATERAL: [
-        r"\bunilateral\b"
-    ],
-}
+# Laterality patterns - ORDER MATTERS! Check bilateral/unilateral BEFORE left/right
+# to avoid "b/l" matching as "l" (left)
+LATERALITY_PATTERNS_ORDERED = [
+    (Laterality.BILATERAL, [
+        r"\bbilateral(?:ly)?\b", r"\bb/l\b", r"\bbilat\b",
+        r"\bboth\s+(?:sides|extremities|eyes|ears|lungs|kidneys)\b"
+    ]),
+    (Laterality.UNILATERAL, [
+        r"\bunilateral(?:ly)?\b"
+    ]),
+    (Laterality.LEFT, [
+        r"\bleft\b", r"\bleft-sided\b", r"\bl\.\s*", r"\blt\b"
+    ]),
+    (Laterality.RIGHT, [
+        r"\bright\b", r"\bright-sided\b", r"\br\.\s*", r"\brt\b"
+    ]),
+]
+
+# Keep dict for backwards compatibility but it won't be used for ordered matching
+LATERALITY_PATTERNS = {lat: patterns for lat, patterns in LATERALITY_PATTERNS_ORDERED}
 
 # Anatomical structures that can have laterality
 LATERALIZED_ANATOMY = [
@@ -422,8 +452,14 @@ class AdvancedNLPService:
         self._lock = threading.Lock()
 
         # Compile regex patterns for efficiency
-        self._negation_pattern = re.compile(
-            r"\b(" + "|".join(re.escape(t) for t in NEGATION_TRIGGERS) + r")\b",
+        # Pre-mention negation (appears before the mention)
+        self._negation_pattern_pre = re.compile(
+            r"\b(" + "|".join(re.escape(t) for t in NEGATION_TRIGGERS_PRE) + r")\b",
+            re.IGNORECASE
+        )
+        # Post-mention negation (appears after the mention)
+        self._negation_pattern_post = re.compile(
+            r"\b(" + "|".join(re.escape(t) for t in NEGATION_TRIGGERS_POST) + r")\b",
             re.IGNORECASE
         )
         self._boundary_pattern = re.compile(
@@ -431,7 +467,13 @@ class AdvancedNLPService:
             re.IGNORECASE
         )
 
-        # Compile laterality patterns
+        # Compile laterality patterns IN ORDER (bilateral/unilateral before left/right)
+        self._laterality_patterns_ordered: list[tuple[Laterality, re.Pattern]] = []
+        for lat, patterns in LATERALITY_PATTERNS_ORDERED:
+            compiled = re.compile("|".join(patterns), re.IGNORECASE)
+            self._laterality_patterns_ordered.append((lat, compiled))
+
+        # Keep dict for backwards compatibility
         self._laterality_patterns: dict[Laterality, re.Pattern] = {}
         for lat, patterns in LATERALITY_PATTERNS.items():
             self._laterality_patterns[lat] = re.compile(
@@ -538,6 +580,9 @@ class AdvancedNLPService:
     ) -> tuple[int | None, int | None, str | None, str | None]:
         """Detect negation with clause boundary awareness.
 
+        Checks for both pre-mention negation ("no chest pain") and
+        post-mention negation ("PE ruled out").
+
         Args:
             text: Full document text
             mention: The mention to check
@@ -545,46 +590,59 @@ class AdvancedNLPService:
         Returns:
             Tuple of (scope_start, scope_end, trigger, boundary)
         """
-        # Get context before the mention
+        # === Check PRE-MENTION negation ===
         ctx_start = max(0, mention.start_offset - self.config.negation_scope_window)
-        context = text[ctx_start:mention.start_offset]
+        context_before = text[ctx_start:mention.start_offset]
 
-        # Find negation triggers in context
+        # Find negation triggers before the mention
         negation_match = None
-        for match in self._negation_pattern.finditer(context):
+        for match in self._negation_pattern_pre.finditer(context_before):
             negation_match = match
 
-        if not negation_match:
-            return None, None, None, None
+        if negation_match:
+            # Calculate absolute positions
+            trigger_start = ctx_start + negation_match.start()
+            trigger_end = ctx_start + negation_match.end()
+            trigger_text = negation_match.group(1)
 
-        # Calculate absolute positions
-        trigger_start = ctx_start + negation_match.start()
-        trigger_end = ctx_start + negation_match.end()
-        trigger_text = negation_match.group(1)
+            # Find clause boundaries between trigger and mention
+            between_text = text[trigger_end:mention.start_offset]
+            boundary_match = self._boundary_pattern.search(between_text)
 
-        # Find clause boundaries between trigger and mention
-        between_text = text[trigger_end:mention.start_offset]
-        boundary_match = self._boundary_pattern.search(between_text)
+            if not boundary_match or boundary_match.start() >= (mention.start_offset - trigger_end):
+                # No boundary between trigger and mention, or boundary is after mention
+                # Mention is within negation scope
+                after_text = text[mention.end_offset:mention.end_offset + self.config.negation_scope_window]
+                after_boundary = self._boundary_pattern.search(after_text)
 
-        if boundary_match:
-            # Boundary found - negation scope ends at boundary
-            boundary_pos = trigger_end + boundary_match.start()
-            if boundary_pos < mention.start_offset:
-                # Mention is after the boundary, not negated
-                return None, None, None, None
+                scope_end = mention.end_offset
+                boundary_text = None
+                if after_boundary:
+                    scope_end = mention.end_offset + after_boundary.start()
+                    boundary_text = after_boundary.group(1)
 
-        # Mention is within negation scope
-        # Find where negation scope ends (next boundary after mention)
-        after_text = text[mention.end_offset:mention.end_offset + self.config.negation_scope_window]
-        after_boundary = self._boundary_pattern.search(after_text)
+                return trigger_start, scope_end, trigger_text, boundary_text
 
-        scope_end = mention.end_offset
-        boundary_text = None
-        if after_boundary:
-            scope_end = mention.end_offset + after_boundary.start()
-            boundary_text = after_boundary.group(1)
+        # === Check POST-MENTION negation ===
+        ctx_end = min(len(text), mention.end_offset + self.config.negation_scope_window)
+        context_after = text[mention.end_offset:ctx_end]
 
-        return trigger_start, scope_end, trigger_text, boundary_text
+        # Find negation triggers after the mention
+        post_match = self._negation_pattern_post.search(context_after)
+
+        if post_match:
+            # Check for clause boundaries between mention and trigger
+            between_text = context_after[:post_match.start()]
+            boundary_match = self._boundary_pattern.search(between_text)
+
+            if not boundary_match:
+                # No boundary between mention and post-trigger
+                trigger_start = mention.end_offset + post_match.start()
+                trigger_text = post_match.group(1)
+
+                return mention.start_offset, trigger_start + len(trigger_text), trigger_text, None
+
+        return None, None, None, None
 
     def _extract_compound_conditions(
         self,
@@ -592,6 +650,11 @@ class AdvancedNLPService:
         mention: ExtractedMention,
     ) -> tuple[str | None, str | None, str | None]:
         """Extract compound condition modifiers.
+
+        Checks for modifiers both BEFORE and AFTER the base term:
+        - "heart failure with reduced EF" (after)
+        - "uncontrolled hypertension" (before)
+        - "HFrEF" (embedded in abbreviation)
 
         Args:
             text: Full document text
@@ -602,6 +665,12 @@ class AdvancedNLPService:
         """
         mention_text_lower = mention.text.lower()
 
+        # First check embedded abbreviations (HFrEF, AECOPD, etc.)
+        for abbr, data in EMBEDDED_COMPOUND_ABBREVIATIONS.items():
+            if abbr in mention_text_lower:
+                compound_text = f"{data['base']} {data['modifier']}"
+                return data["modifier"], compound_text, data["base"]
+
         # Check each compound pattern
         for condition_name, pattern_data in self._compound_patterns.items():
             base_re = pattern_data["base"]
@@ -610,14 +679,18 @@ class AdvancedNLPService:
             if not base_re.search(mention_text_lower):
                 continue
 
-            # Get extended context after mention
+            # Get extended context BEFORE mention (for "uncontrolled hypertension")
+            ctx_start = max(0, mention.start_offset - 30)
+            before_text = text[ctx_start:mention.start_offset].lower()
+
+            # Get extended context AFTER mention (for "hypertension with CKD")
             ctx_end = min(len(text), mention.end_offset + 50)
             after_text = text[mention.end_offset:ctx_end].lower()
 
-            # Also check if modifier is already in mention text
-            full_context = mention_text_lower + " " + after_text
+            # Build full context: before + mention + after
+            full_context = before_text + " " + mention_text_lower + " " + after_text
 
-            # Look for modifiers
+            # Look for modifiers in the full context
             for modifier_re, modifier_template in pattern_data["modifiers"]:
                 match = modifier_re.search(full_context)
                 if match:
@@ -643,6 +716,9 @@ class AdvancedNLPService:
     ) -> tuple[Laterality | None, str | None]:
         """Extract laterality for anatomical mentions.
 
+        Uses ordered pattern matching to check bilateral/unilateral
+        BEFORE left/right (prevents "b/l" matching as "l").
+
         Args:
             text: Full document text
             mention: The mention to check
@@ -658,7 +734,7 @@ class AdvancedNLPService:
 
         if not is_anatomical:
             # Also check if it's a condition that commonly has laterality
-            anatomical_conditions = ["pain", "fracture", "weakness", "numbness", "edema"]
+            anatomical_conditions = ["pain", "fracture", "weakness", "numbness", "edema", "swelling"]
             is_anatomical = any(cond in mention_lower for cond in anatomical_conditions)
 
         if not is_anatomical:
@@ -668,12 +744,9 @@ class AdvancedNLPService:
         ctx_start = max(0, mention.start_offset - self.config.laterality_window)
         context = text[ctx_start:mention.end_offset].lower()
 
-        # Also check mention text itself (e.g., "left knee")
-        full_context = context
-
-        # Check each laterality pattern
-        for laterality, pattern in self._laterality_patterns.items():
-            match = pattern.search(full_context)
+        # Check each laterality pattern IN ORDER (bilateral before left/right)
+        for laterality, pattern in self._laterality_patterns_ordered:
+            match = pattern.search(context)
             if match:
                 return laterality, match.group(0).strip()
 

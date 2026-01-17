@@ -135,6 +135,7 @@ def require_api_key() -> None:
 PUBLIC_ROUTES = frozenset({
     "/",
     "/health",
+    "/ready",
     "/docs",
     "/redoc",
     "/openapi.json",

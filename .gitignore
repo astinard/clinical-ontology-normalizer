@@ -62,3 +62,6 @@ htmlcov/
 .mcp.json
 .playwright-mcp/
 fhir-mcp/
+
+# Vocabulary data (too large for git)
+backend/data/athena_vocab/

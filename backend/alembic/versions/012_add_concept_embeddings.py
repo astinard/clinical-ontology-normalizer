@@ -38,7 +38,7 @@ def upgrade() -> None:
     # Add index for efficient embedding lookups
     # Using a partial index to only index concepts that have embeddings
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_concepts_embedding_not_null
+        CREATE INDEX IF NOT EXISTS ix_concepts_embedding_not_null
         ON concepts (concept_id)
         WHERE embedding IS NOT NULL
     """)

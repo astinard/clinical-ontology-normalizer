@@ -391,9 +391,10 @@ async def get_admin_dashboard(
             )
 
     # Get summaries from other dashboards
-    provider_resp = await get_provider_dashboard(patient_id)
-    biller_resp = await get_biller_dashboard(patient_id)
-    quality_resp = await get_quality_dashboard(patient_id)
+    # Note: Must pass named arguments to avoid Query() defaults being used
+    provider_resp = await get_provider_dashboard(patient_id=patient_id)
+    biller_resp = await get_biller_dashboard(patient_id=patient_id, clinical_text=None)
+    quality_resp = await get_quality_dashboard(patient_id=patient_id)
 
     # Build system stats
     system_stats = SystemStatsSummary(

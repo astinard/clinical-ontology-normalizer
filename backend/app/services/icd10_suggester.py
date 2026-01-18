@@ -661,7 +661,7 @@ for _code in ICD10_CODES:
 # Load Extended ICD-10 Codes from Fixture
 # ============================================================================
 
-FIXTURE_FILE = Path(__file__).parent.parent.parent / "fixtures" / "icd10_codes.json"
+FIXTURE_FILE = Path(__file__).parent.parent.parent / "fixtures" / "icd10_codes_full.json"
 
 
 def _get_category_from_code(code: str) -> CodeCategory:
@@ -740,11 +740,16 @@ def load_extended_icd10_codes() -> tuple[list[ICD10Code], dict[str, list[str]]]:
                 category = _get_category_from_code(code_str)
                 synonyms = concept.get("synonyms", [])
 
+                # Determine billable status
+                is_billable = concept.get("is_billable", True)
+                if "concept_class_id" in concept:
+                    is_billable = "billing code" in concept.get("concept_class_id", "").lower()
+
                 icd_code = ICD10Code(
                     code=code_str,
                     description=concept.get("concept_name", ""),
                     category=category,
-                    is_billable=True,  # Most ICD-10-CM codes are billable
+                    is_billable=is_billable,
                     omop_concept_id=concept.get("concept_id"),
                     synonyms=synonyms,
                 )

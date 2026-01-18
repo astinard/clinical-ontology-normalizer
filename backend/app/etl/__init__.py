@@ -37,6 +37,12 @@ from app.etl.condition_etl import (
     ConditionETLConfig,
     ConditionETLResult,
 )
+from app.etl.death_etl import (
+    DeathETL,
+    DeathETLConfig,
+    DeathETLResult,
+    SourceDeath,
+)
 from app.etl.drug_etl import (
     DrugETL,
     DrugETLConfig,
@@ -83,6 +89,11 @@ __all__ = [
     "ConditionETL",
     "ConditionETLConfig",
     "ConditionETLResult",
+    # Death ETL
+    "DeathETL",
+    "DeathETLConfig",
+    "DeathETLResult",
+    "SourceDeath",
     # Drug ETL
     "DrugETL",
     "DrugETLConfig",

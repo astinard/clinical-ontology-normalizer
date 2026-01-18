@@ -42,6 +42,12 @@ from app.connectors.base import (
 )
 from app.connectors.ccda_connector import CCDAConnector, CCDAConnectorConfig
 from app.connectors.csv_connector import CSVConnector, CSVConnectorConfig
+from app.connectors.database_connector import (
+    DatabaseConnector,
+    DatabaseConnectorConfig,
+    TableMapping,
+)
+from app.connectors.fhir_connector import FHIRConnector, FHIRConnectorConfig
 from app.connectors.hl7v2_connector import HL7v2Connector, HL7v2ConnectorConfig
 
 __all__ = [
@@ -72,4 +78,11 @@ __all__ = [
     # HL7 v2 Connector
     "HL7v2Connector",
     "HL7v2ConnectorConfig",
+    # FHIR R4 Connector
+    "FHIRConnector",
+    "FHIRConnectorConfig",
+    # Database Connector
+    "DatabaseConnector",
+    "DatabaseConnectorConfig",
+    "TableMapping",
 ]

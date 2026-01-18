@@ -67,7 +67,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 
 export default function ClinicalSearch({
   patientId,
-  apiBaseUrl = "http://localhost:8000",
+  apiBaseUrl = "http://localhost:8001",
   onResultClick,
 }: ClinicalSearchProps) {
   // State

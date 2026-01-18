@@ -102,3 +102,57 @@ class ConceptSynonym(Base):
 
     def __repr__(self) -> str:
         return f"<ConceptSynonym(concept_id={self.concept_id}, name='{self.concept_synonym_name}')>"
+
+
+class ConceptRelationship(Base):
+    """OMOP Concept Relationship table for cross-vocabulary mapping.
+
+    Stores relationships between concepts including:
+    - Maps to: Non-standard to standard concept mappings
+    - Is a: Hierarchical relationships
+    - May treat: Drug to condition relationships
+    - And many more...
+
+    Key relationship types for mapping:
+    - "Maps to": Source vocabulary → Standard vocabulary (SNOMED, RxNorm)
+    - "Mapped from": Reverse of "Maps to"
+    - "Is a" / "Subsumes": Hierarchical parent-child
+    """
+
+    __tablename__ = "concept_relationships"
+
+    concept_id_1: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True,
+    )
+    concept_id_2: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True,
+    )
+    relationship_id: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        index=True,
+    )
+    valid_start_date: Mapped[str | None] = mapped_column(
+        String(8),
+        nullable=True,
+    )
+    valid_end_date: Mapped[str | None] = mapped_column(
+        String(8),
+        nullable=True,
+    )
+    invalid_reason: Mapped[str | None] = mapped_column(
+        String(1),
+        nullable=True,
+    )
+
+    def __repr__(self) -> str:
+        return f"<ConceptRelationship({self.concept_id_1} -{self.relationship_id}-> {self.concept_id_2})>"
+
+    @property
+    def is_valid(self) -> bool:
+        """Check if this relationship is currently valid."""
+        return self.invalid_reason is None

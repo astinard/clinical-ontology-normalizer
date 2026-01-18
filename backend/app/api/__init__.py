@@ -1,5 +1,6 @@
 """API routers for Clinical Ontology Normalizer."""
 
+from app.api.coding import router as coding_router
 from app.api.dashboard import router as dashboard_router
 from app.api.documents import router as documents_router
 from app.api.export import router as export_router
@@ -7,8 +8,10 @@ from app.api.fhir import router as fhir_router
 from app.api.jobs import router as jobs_router
 from app.api.patients import router as patients_router
 from app.api.search import router as search_router
+from app.api.vocabulary_mapping import router as vocabulary_mapping_router
 
 __all__ = [
+    "coding_router",
     "dashboard_router",
     "documents_router",
     "export_router",
@@ -16,4 +19,5 @@ __all__ = [
     "jobs_router",
     "patients_router",
     "search_router",
+    "vocabulary_mapping_router",
 ]

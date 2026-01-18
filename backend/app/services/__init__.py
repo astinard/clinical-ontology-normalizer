@@ -212,6 +212,18 @@ from app.services.nlp_advanced import (
     get_advanced_nlp_service,
     reset_advanced_nlp_service,
 )
+from app.services.vocabulary_mapping import (
+    BatchMappingResult,
+    ConfidenceLevel as MappingConfidenceLevel,
+    LocalCodeMapping,
+    MappingResult,
+    MappingType,
+    SourceVocabulary,
+    TargetVocabulary,
+    VocabularyMappingService,
+    get_vocabulary_mapping_service,
+    reset_vocabulary_mapping_service,
+)
 
 __all__ = [
     "BaseFactBuilderService",
@@ -373,4 +385,14 @@ __all__ = [
     "MentionEnhancement",
     "get_advanced_nlp_service",
     "reset_advanced_nlp_service",
+    "BatchMappingResult",
+    "MappingConfidenceLevel",
+    "LocalCodeMapping",
+    "MappingResult",
+    "MappingType",
+    "SourceVocabulary",
+    "TargetVocabulary",
+    "VocabularyMappingService",
+    "get_vocabulary_mapping_service",
+    "reset_vocabulary_mapping_service",
 ]

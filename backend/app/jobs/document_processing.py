@@ -2,7 +2,7 @@
 
 import logging
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -147,7 +147,10 @@ def process_document(document_id: str) -> dict:
             direct_concept_map: dict[str, tuple[int, str]] = {}  # mention_id -> (concept_id, domain)
 
             for extracted in extracted_mentions:
+                # Explicitly generate ID to ensure it's available before flush
+                mention_id = str(uuid4())
                 mention = Mention(
+                    id=mention_id,
                     document_id=document_id,
                     text=extracted.text,
                     start_offset=extracted.start_offset,

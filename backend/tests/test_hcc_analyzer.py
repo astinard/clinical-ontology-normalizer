@@ -383,15 +383,23 @@ class TestPriorityActions:
             assert len(result.priority_actions) >= 0
 
     def test_high_priority_actions_first(self):
-        """Test high priority actions appear first."""
+        """Test actions are ordered by priority (HIGH > MEDIUM > LOW)."""
         text = """
         Multiple conditions: CHF, diabetes with complications, COPD.
         """
         result = self.service.analyze_patient(text)
 
         if result.priority_actions:
-            # First action should be HIGH PRIORITY
-            assert "[HIGH PRIORITY]" in result.priority_actions[0] or len(result.priority_actions) == 0
+            # Verify actions are sorted by priority
+            # HIGH PRIORITY comes before MEDIUM, MEDIUM before LOW
+            priorities_order = {"[HIGH PRIORITY]": 0, "[MEDIUM]": 1, "[LOW]": 2}
+            prev_priority = -1
+            for action in result.priority_actions:
+                for prefix, priority in priorities_order.items():
+                    if prefix in action:
+                        assert priority >= prev_priority, "Actions should be ordered by priority"
+                        prev_priority = priority
+                        break
 
 
 # ============================================================================

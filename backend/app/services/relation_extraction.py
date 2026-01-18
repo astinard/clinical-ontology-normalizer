@@ -113,6 +113,18 @@ TREATMENT_PATTERNS = [
     # Patient on Drug for Condition
     (r"(?:patient\s+)?on\s+(\b\w+(?:\s+\w+)?\b)\s+for\s+(?:his|her|their\s+)?(\b\w+(?:\s+\w+)*\b)",
      Domain.DRUG.value, Domain.CONDITION.value, RelationType.TREATS),
+
+    # Condition, treated with Drug (history format)
+    (r"(\b\w+(?:\s+\w+)*\b),?\s+(?:treated|managed)\s+(?:with|on)\s+(\b\w+(?:\s+\w+)?\b)",
+     Domain.CONDITION.value, Domain.DRUG.value, RelationType.TREATS),
+
+    # Condition, controlled on Drug (history format)
+    (r"(\b\w+(?:\s+\w+)*\b),?\s+(?:controlled|stable)\s+(?:on|with)\s+(\b\w+(?:\s+\w+)?\b)",
+     Domain.CONDITION.value, Domain.DRUG.value, RelationType.TREATS),
+
+    # Condition, on Drug (simplified history format)
+    (r"(\b\w+(?:\s+\w+)*\b),?\s+on\s+(\b\w+(?:\s+\w+)?\b)",
+     Domain.CONDITION.value, Domain.DRUG.value, RelationType.TREATS),
 ]
 
 ADVERSE_PATTERNS = [
@@ -495,6 +507,14 @@ class RelationExtractionService:
 
         # Filter by confidence
         relations = [r for r in relations if r.confidence >= self.config.min_confidence]
+
+        # Filter by domain if configured
+        if self.config.allowed_source_domains:
+            relations = [r for r in relations
+                        if r.source_domain in self.config.allowed_source_domains]
+        if self.config.allowed_target_domains:
+            relations = [r for r in relations
+                        if r.target_domain in self.config.allowed_target_domains]
 
         return self._deduplicate_relations(relations)
 

@@ -112,6 +112,28 @@ class RuleBasedNLPService(BaseNLPService):
         r"(?:bnp)\s*(?:of\s*)?([\d.]+)\s*(?:pg/mL)?",
     ]
 
+    # Positive assertion triggers (words that indicate presence - check FIRST)
+    # These override negation when found closer to the mention
+    POSITIVE_TRIGGERS = [
+        r"\btaking\b",
+        r"\btakes\b",
+        r"\bon\b",  # "on metformin"
+        r"\breceiving\b",
+        r"\breceives\b",
+        r"\bprescribed\b",
+        r"\bstarted\s+(?:on\s+)?",
+        r"\bcontinue\b",
+        r"\bcontinued\b",
+        r"\bcontinuing\b",
+        r"\busing\b",
+        r"\bhas\b",  # "has diabetes"
+        r"\bwith\b",  # "patient with hypertension"
+        r"\bdiagnosed\s+with\b",
+        r"\bpresents?\s+with\b",
+        r"\bcomplaining\s+of\b",
+        r"\breports?\b",
+    ]
+
     # Negation triggers (words that indicate absence)
     # Note: Order matters - check "cannot rule out" for uncertainty first
     NEGATION_TRIGGERS = [
@@ -434,9 +456,11 @@ class RuleBasedNLPService(BaseNLPService):
     def _detect_assertion(self, context: str) -> Assertion:
         """Detect assertion status from context.
 
-        Checks for uncertainty and negation triggers in the context
-        preceding a mention. Uncertainty is checked FIRST because
-        phrases like "cannot rule out" should be POSSIBLE, not ABSENT.
+        Uses position-based detection: the trigger CLOSEST to the mention wins.
+        This prevents negation from previous sentences affecting mentions in
+        later sentences (e.g., "No chest pain. Taking metformin").
+
+        Priority order for ties: uncertainty > positive > negation
 
         Args:
             context: Text context before the mention.
@@ -444,15 +468,36 @@ class RuleBasedNLPService(BaseNLPService):
         Returns:
             Assertion enum value (PRESENT, ABSENT, or POSSIBLE).
         """
-        # Check for uncertainty FIRST (important for "cannot rule out")
-        for pattern in self.UNCERTAINTY_TRIGGERS:
-            if re.search(pattern, context, re.IGNORECASE):
-                return Assertion.POSSIBLE
+        # Find positions of all triggers (we want the one closest to the mention)
+        # The mention is at the END of context, so higher position = closer
 
-        # Then check for negation
-        for pattern in self.NEGATION_TRIGGERS:
-            if re.search(pattern, context, re.IGNORECASE):
-                return Assertion.ABSENT
+        def find_closest_match(patterns: list[str]) -> int:
+            """Find the position of the closest match to end of context."""
+            best_pos = -1
+            for pattern in patterns:
+                for match in re.finditer(pattern, context, re.IGNORECASE):
+                    if match.end() > best_pos:
+                        best_pos = match.end()
+            return best_pos
+
+        uncertainty_pos = find_closest_match(self.UNCERTAINTY_TRIGGERS)
+        positive_pos = find_closest_match(self.POSITIVE_TRIGGERS)
+        negation_pos = find_closest_match(self.NEGATION_TRIGGERS)
+
+        # If no triggers found, default to PRESENT
+        if uncertainty_pos == -1 and positive_pos == -1 and negation_pos == -1:
+            return Assertion.PRESENT
+
+        # The closest trigger to the mention wins
+        # Use the END position of match (higher = closer to mention)
+        max_pos = max(uncertainty_pos, positive_pos, negation_pos)
+
+        if uncertainty_pos == max_pos:
+            return Assertion.POSSIBLE
+        elif positive_pos == max_pos:
+            return Assertion.PRESENT
+        elif negation_pos == max_pos:
+            return Assertion.ABSENT
 
         return Assertion.PRESENT
 
